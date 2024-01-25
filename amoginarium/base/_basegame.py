@@ -82,13 +82,13 @@ class BaseGame():
         """
         start pygame
         """
-
         last = perf_counter()
         last_fps_print = 0
         fps = 0
         while self.running:
             now = perf_counter()
 
+            # only update fps every 200ms (for readability)
             if now - last_fps_print > .2:
                 fps = int(1 / (now - last))
                 last_fps_print = now
