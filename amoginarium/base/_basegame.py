@@ -19,11 +19,11 @@ from ..debugging import run_with_debug
 
 
 def current_time() -> str:
-    ms = str(round(perf_counter(), 3)).split(".")[1]
-    return f"{strftime('%H:%M:%S')}.{ms: <3} |> "
+    ms = str(round(perf_counter(), 4)).split(".")[1]
+    return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
 
 
-class BaseGame():
+class BaseGame:
     running: bool = True
     _last_logic: float
 

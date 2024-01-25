@@ -1,4 +1,4 @@
-__pycache__/
+**/__pycache__/
 venv/
 .idea/
-debug_log.json
+debug.json
