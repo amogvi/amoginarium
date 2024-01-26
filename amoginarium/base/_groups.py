@@ -16,6 +16,10 @@ class _Updated(pg.sprite.Group):
     ...
 
 
+class _Drawn(pg.sprite.Group):
+    ...
+
+
 class _GravityAffected(pg.sprite.Group):
     """
     required methods / variables:
@@ -24,19 +28,30 @@ class _GravityAffected(pg.sprite.Group):
     """
     def calculate_gravity(self, _delta: float) -> None:
         for sprite in self.sprites():
+            sprite: tp.Any
+
+            sprite.acceleration.y = 9.81 * 50
+
             with suppress(AttributeError):
+                if sprite.on_ground:
+                    while sprite.on_ground:
+                        sprite.position.y -= 0.01
+
+                    sprite.position.y += 0.01
+                    sprite.velocity.y = 0
+
+
+class _FrictionXAffected(pg.sprite.Group):
+    def calculate_friction(self, delta: float) -> None:
+        for sprite in self.sprites():
+            with suppress(AttributeError):
+                sprite.acceleration.x = 0
                 sprite: tp.Any
-                if not sprite.on_ground or sprite.velocity.y < 0:
-                    sprite.acceleration.y = 9.81
-                    continue
-
-                while sprite.on_ground:
-                    sprite.position.y -= 0.01
-                sprite.position.y += 0.01
-
-                sprite.velocity.y = 0
+                sprite.velocity.x *= 1 - (0.5 * delta)
 
 
 # initialize groups
+Drawn = _Drawn()
 Updated = _Updated()
 GravityAffected = _GravityAffected()
+FrictionXAffected = _FrictionXAffected()

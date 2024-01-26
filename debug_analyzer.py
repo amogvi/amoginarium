@@ -22,7 +22,8 @@ for value in data["pygame"]:
 
 logic_xs = []
 logic_ys = []
-for value in data["logic"][2:]:  # anything before 2 gives weiredly high results
+# anything before 2 gives weiredly high results
+for value in data["logic"][2:]:
     logic_xs.append(value[0])
     logic_ys.append(value[1] * 1000)
 

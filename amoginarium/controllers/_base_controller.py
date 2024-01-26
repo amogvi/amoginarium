@@ -39,7 +39,7 @@ class _Controllers:
     @property
     def controllers(self) -> list["Controller"]:
         return self._controllers.copy()
-    
+
     def append(self, controller: "Controller") -> None:
         """
         add a new controller to the group
@@ -66,11 +66,11 @@ class _Controllers:
 
         else:
             new_id = max(list(self._callbacks.keys())) + 1
-    
+
         self._callbacks[new_id] = callback
 
         return new_id
-    
+
     def remove_callback(self, cid: int) -> None:
         """
         remove a callback with it's callback-id
@@ -78,7 +78,7 @@ class _Controllers:
         if cid in self._callbacks:
             self._callbacks.pop(cid)
             return
-        
+
         raise ValueError(f"Invalid cid: {cid}")
 
 
@@ -96,7 +96,6 @@ class Controller:
 
         return new_instance
 
-
     def __init__(self) -> None:
         self._keys = Controlls()
 
@@ -108,7 +107,7 @@ class Controller:
     @property
     def up(self) -> bool:
         return self._keys.up
-    
+
     @property
     def down(self) -> bool:
         return self._keys.down
@@ -140,3 +139,13 @@ class Controller:
     @property
     def controlls(self) -> Controlls:
         return self._keys.copy()
+
+    def __str__(self) -> str:
+        return (
+            "<controller: "
+            f"{int(self.left)}{int(self.right)}{int(self.up)}{int(self.down)},"
+            f" x: {self.joy_x}, y: {self.joy_y}>"
+        )
+
+    def __repr__(self) -> str:
+        return str(self)

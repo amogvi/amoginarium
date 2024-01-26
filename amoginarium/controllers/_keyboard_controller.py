@@ -8,19 +8,19 @@ Author:
 Nilusink
 """
 from dataclasses import dataclass
-import typing as tp
-import keyboard
+import pygame as pg
+
 
 from ._base_controller import Controller
 
 
 @dataclass(frozen=True)
 class KeyboardControlls:
-    up: str = "w"
-    down: str = "s"
-    left: str = "a"
-    right: str = "d"
-    press: str = "space"
+    up: str = pg.K_w
+    down: str = pg.K_s
+    left: str = pg.K_a
+    right: str = pg.K_d
+    press: str = pg.K_SPACE
 
 
 class KeyboardController(Controller):
@@ -29,10 +29,16 @@ class KeyboardController(Controller):
 
         self._controlls = KeyboardControlls()
 
-    def update(self):
+    def update(self, delta):
+        pressed_keys = pg.key.get_pressed()
+
         # read controlls
-        self._keys.up = keyboard.is_pressed(self._controlls.up)
-        self._keys.down = keyboard.is_pressed(self._controlls.down)
-        self._keys.left = keyboard.is_pressed(self._controlls.left)
-        self._keys.right = keyboard.is_pressed(self._controlls.right)
-        self._keys.joy_btn = keyboard.is_pressed(self._controlls.press)
+        up = pressed_keys[self._controlls.up]
+        down = pressed_keys[self._controlls.down]
+        left = pressed_keys[self._controlls.left]
+        right = pressed_keys[self._controlls.right]
+        self._keys.down = pressed_keys[self._controlls.press]
+
+        # set joystick position (using wasd keys)
+        self._keys.joy_x = (1 - left + right) / 2
+        self._keys.joy_y = (1 - down + up) / 2

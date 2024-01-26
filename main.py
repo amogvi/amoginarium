@@ -1,6 +1,6 @@
 #! venv/bin/python
-from amoginarium.base import BaseGame
 from amoginarium.controllers import KeyboardController
+from amoginarium.base import BaseGame
 
 
 def main():

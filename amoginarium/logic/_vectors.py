@@ -153,7 +153,7 @@ class Vec2:
 
         elif calc_from in ("c", "cartesian"):
             self.__length = m.sqrt(self.x**2 + self.y**2)
-            self.__angle = m.arctan2(self.y, self.x)
+            self.__angle = m.atan2(self.y, self.x)
 
         else:
             raise ValueError("Invalid value for \"calc_from\"")

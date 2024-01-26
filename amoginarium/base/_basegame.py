@@ -10,12 +10,14 @@ Nilusink
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, sleep, strftime
 from icecream import ic
-from ._groups import *
 import pygame as pg
 import json
 
+from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller
 from ..debugging import run_with_debug
+from ..logic import SimpleLock
+from ..entities import Player
 
 
 def current_time() -> str:
@@ -35,7 +37,7 @@ class BaseGame:
         if not debug:
             ic.disable()
 
-        ic.configureOutput(prefix=current_time)
+        ic.configureOutput(prefix=self.time_since_start)
 
         self._pool = ThreadPoolExecutor(max_workers=5)
 
@@ -44,12 +46,16 @@ class BaseGame:
         self._pygame_loop_times: list[tuple[float, float]] = []
         self._comms_loop_times: list[tuple[float, float]] = []
 
+        self._pygame_fps: int = 0
+        self._logic_fps: int = 0
+        self._comms_ping: int = 0
+
         # logic setup
         self._new_controllers: list[Controller] = []
-        self._new_controllers_lock: bool = False
+        self._new_controllers_lock = SimpleLock()
 
         self._controllers_cid = Controllers.on_new_controller(
-            lambda c: self._new_controllers.append(c)
+            self._add_controller
         )
 
         # initialize pygame stuff
@@ -72,11 +78,27 @@ class BaseGame:
                 self,
                 func,
                 run_with_debug(
-                    on_fail=lambda *_: self.end()
+                    on_fail=lambda *_: self.end(),
+                    reraise_errors=True
                 )(getattr(self, func))
             )
-        
+
         self._game_start = 0
+
+    def time_since_start(self) -> str:
+        """
+        styleized time since game start
+        gamestart being time since `mainloop` was called
+        """
+        return f"{round(perf_counter() - self._game_start, 4): >8} |> "
+
+    def _add_controller(self, controller: Controller) -> None:
+        """
+        appends a new controller to the queue
+        """
+        self._new_controllers_lock.aquire()
+        self._new_controllers.append(controller)
+        self._new_controllers_lock.release()
 
     def _run_pygame(self) -> None:
         """
@@ -84,13 +106,12 @@ class BaseGame:
         """
         last = perf_counter()
         last_fps_print = 0
-        fps = 0
         while self.running:
             now = perf_counter()
 
             # only update fps every 200ms (for readability)
             if now - last_fps_print > .2:
-                fps = int(1 / (now - last))
+                self._pygame_fps = int(1 / (now - last))
                 last_fps_print = now
 
             # clear screen
@@ -107,11 +128,21 @@ class BaseGame:
                         return self.end()
 
             # handle groups
-            Updated.draw(self.middle_layer)
+            Drawn.draw(self.middle_layer)
 
             # show fps
-            fps_surf = self.font.render(f"{fps} FPS", False, (255, 255, 255, 255))
+            fps_surf = self.font.render(
+                f"{self._pygame_fps} FPS (render)", False, (255, 255, 255, 255)
+            )
             self.top_layer.blit(fps_surf, (0, 0))
+            fps_surf = self.font.render(
+                f"{self._logic_fps} FPS (logic)", False, (255, 255, 255, 255)
+            )
+            self.top_layer.blit(fps_surf, (0, 15))
+            ping_surf = self.font.render(
+                f"{self._comms_ping} ms ping", False, (255, 255, 255, 255)
+            )
+            self.top_layer.blit(ping_surf, (0, 30))
 
             # draw layers
             self.screen.blit(self.lowest_layer, (0, 0))
@@ -119,12 +150,12 @@ class BaseGame:
             self.screen.blit(self.top_layer, (0, 0))
 
             pg.display.update()
-            
+
             self._pygame_loop_times.append(
                 (now - self._game_start, now - last)
             )
             last = now
-        
+
         ic("pygame end")
 
     def _run_logic(self) -> None:
@@ -132,27 +163,38 @@ class BaseGame:
         start game logic
         """
         last = perf_counter()
+        last_fps_print = 0
         while self.running:
             now = perf_counter()
+
+            # minimum loop time of .5 ms (so the CPU isn't stressed too much)
+            while now - last < .0005:
+                now = perf_counter()
+
             delta = now - last
 
+            # only update fps every 200ms (for readability)
+            if now - last_fps_print > .2:
+                self._logic_fps = int(1 / delta)
+                last_fps_print = now
+
             # check for new controllers
-            while self._new_controllers_lock: pass
-            self._new_controllers_lock = True
+            if len(self._new_controllers) > 0:
+                self._new_controllers_lock.aquire()
+                tmp = self._new_controllers.copy()
+                self._new_controllers.clear()
+                self._new_controllers_lock.release()
 
-            tmp = self._new_controllers.copy()
-            self._new_controllers.clear()
-
-            self._new_controllers_lock = False
-
-            for new_controller in tmp:
-                ic(new_controller)
+                for new_controller in tmp:
+                    # spawn new player
+                    Player(controller=new_controller)
+                    ic(new_controller, Player)
 
             # update entities
-            Updated.update(delta)
             GravityAffected.calculate_gravity(delta)
+            FrictionXAffected.calculate_friction(delta)
 
-            sleep(.01)
+            Updated.update(delta)
 
             self._logic_loop_times.append(
                 (now - self._game_start, delta)
@@ -168,14 +210,15 @@ class BaseGame:
         last = perf_counter()
         while self.running:
             now = perf_counter()
+            delta = now - last
 
-            sleep(.5)
+            sleep(.1)
 
+            self._comms_ping = int(delta * 1000)
             self._comms_loop_times.append(
-                (now - self._game_start, now - last)
+                (now - self._game_start, delta)
             )
             last = now
-
 
         ic("comms end")
 
@@ -194,14 +237,13 @@ class BaseGame:
         """
         stop everything
         """
+        # tell threads to exit
+        self.running = False
+
         ic("stopping game...")
 
         # quit pygame
         pg.quit()
-
-        # stop threads
-        self.running = False
-        self._pool.shutdown(wait=False)
 
         # write debug data
         ic("writing debug data")
@@ -211,6 +253,10 @@ class BaseGame:
                 "comms": self._comms_loop_times,
                 "pygame": self._pygame_loop_times
             }, out)
-        
+
         ic("done writing debug data")
 
+        # stop threads
+        ic("waiting for threads to quit...")
+        self._pool.shutdown(wait=True)
+        ic("all threads exited")
