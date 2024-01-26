@@ -95,3 +95,15 @@ def get_fg_color(n: int) -> str:
     Gray background color where n can be a number between 232-255
     """
     return f"\u001b[38;5;{n}m"
+
+
+def terminal_link(uri, label=None):
+    if label is None:
+        label = uri
+
+    parameters = ''
+
+    # OSC 8 ; params ; URI ST <name> OSC 8 ;; ST
+    escape_mask = '\033]8;{};{}\033\\{}\033]8;;\033\\'
+
+    return escape_mask.format(parameters, uri, label)

@@ -94,8 +94,14 @@ class Vec2:
         :return: tuple[Vector in only that direction, everything else]
         """
         a = (direction.angle - self.angle)
-        facing = Vec2.from_polar(angle=direction.angle, length=self.length * m.cos(a))
-        other = Vec2.from_polar(angle=direction.angle - m.pi / 2, length=self.length *m.sin(a))
+        facing = Vec2.from_polar(
+            angle=direction.angle,
+            length=self.length * m.cos(a)
+        )
+        other = Vec2.from_polar(
+            angle=direction.angle - m.pi / 2,
+            length=self.length * m.sin(a)
+        )
 
         return facing, other
 
@@ -135,7 +141,10 @@ class Vec2:
 
     def __mul__(self, other):
         if issubclass(type(other), Vec2):
-            return Vec2.from_polar(angle=self.angle + other.angle, length=self.length * other.length)
+            return Vec2.from_polar(
+                angle=self.angle + other.angle,
+                length=self.length * other.length
+            )
 
         return Vec2.from_cartesian(x=self.x * other, y=self.y * other)
 
@@ -190,10 +199,15 @@ class Vec2:
             return Vec2.from_cartesian(x=dictionary["x"], y=dictionary["y"])
 
         elif "angle" in dictionary and "length" in dictionary:
-            return Vec2.from_polar(angle=dictionary["angle"], length=dictionary["length"])
+            return Vec2.from_polar(
+                angle=dictionary["angle"],
+                length=dictionary["length"]
+                )
 
         else:
-            raise KeyError("either (x & y) or (angle & length) must be in dict!")
+            raise KeyError(
+                "either (x & y) or (angle & length) must be in dict!"
+            )
 
     @staticmethod
     def normalize_angle(value: float) -> float:

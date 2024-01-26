@@ -7,8 +7,6 @@ defines the most basic form of an entity
 Author:
 Nilusink
 """
-from ..debugging import run_with_debug
-from icecream import ic
 import pygame as pg
 import math as m
 
@@ -24,12 +22,12 @@ class Entity(pg.sprite.Sprite):
 
     def __init__(
         self,
-        size: int = ...,
+        size: Vec2 = ...,
         facing: Vec2 = ...,
         initial_position: Vec2 = ...,
         initial_velocity: Vec2 = ...
     ) -> None:
-        self.size = 1 if size is ... else size
+        self.size = Vec2.from_cartesian(1, 1) if size is ... else size
         self.facing = Vec2.from_cartesian(1, 0) if facing is ... else facing
         self.position = Vec2() if initial_position is ... else initial_position
         self.velocity = Vec2() if initial_velocity is ... else initial_velocity
@@ -40,19 +38,15 @@ class Entity(pg.sprite.Sprite):
         self.update_rect()
         self.add(Updated)
 
-    @property
-    @run_with_debug(reraise_errors=True)
     def on_ground(self) -> bool:
-        out = self.position.y > 1080
-        ic(out, self.position.y)
-        return out
+        return self.position.y + self.size.y > 1080
 
     def update_rect(self) -> None:
         self.rect = pg.Rect(
-            self.position.x - self.size / 2,
-            self.position.y - self.size,
-            self.size,
-            self.size
+            self.position.x - self.size.x / 2,
+            self.position.y - self.size.y / 2,
+            self.size.x,
+            self.size.y
         )
 
     def update(self, delta: float) -> None:
@@ -61,9 +55,6 @@ class Entity(pg.sprite.Sprite):
         self.position += self.velocity * delta
 
         # re-calculate pygame stuff
-        orig_center = self.rect.center
-
-        self.rect = self.image.get_rect(center=orig_center)
         self.last_angle = self.velocity.angle
 
         self.update_rect()
@@ -81,18 +72,25 @@ class ImageEntity(VisibleEntity):
     _original_image: pg.surface.Surface
 
     def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
         self.image = pg.transform.rotate(
             self._original_image.copy(),
             -self.velocity.angle * (180 / m.pi)
         )
-
-        super().__init__()
 
     def update(self, delta: float) -> None:
+        orig_center = self.rect.center
+        # try:
         self.image = pg.transform.rotate(
             self._original_image.copy(),
             -self.velocity.angle * (180 / m.pi)
-        )
+)
+
+        # except pg.error:
+        #     self.image = self._original_image.copy()
+        self.rect = self.image.get_rect(center=orig_center)
+        self.last_angle = self.velocity.angle
 
         super().update(delta)
 
@@ -104,13 +102,21 @@ class LRImageEntity(VisibleEntity):
     def __init__(self, *args, **kwargs) -> None:
         self.image = self._image_right.copy()
 
-        super().__init__()
+        super().__init__(*args, **kwargs)
+
+    def update_rect(self) -> None:
+        self.rect = pg.Rect(
+            self.position.x - self.size.x / 2,
+            self.position.y - self.size.y / 2,
+            self.size.x,
+            self.size.y
+        )
 
     def update(self, delta: float) -> None:
-        if self.acceleration.x > 0:
+        if self.facing.x > 0:
             self.image = self._image_right.copy()
 
-        elif self.acceleration.x < 0:
+        elif self.facing.x < 0:
             self.image = self._image_left.copy()
 
         super().update(delta)

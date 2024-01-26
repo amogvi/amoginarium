@@ -88,7 +88,7 @@ Controllers = _Controllers()
 class Controller:
     _keys: Controlls
 
-    def __new__(cls) -> tp.Self:
+    def __new__(cls, *args, **kwargs) -> tp.Self:
         new_instance = super(Controller, cls).__new__(cls)
 
         # append every new instance to controllers
@@ -139,6 +139,25 @@ class Controller:
     @property
     def controlls(self) -> Controlls:
         return self._keys.copy()
+
+    def rumble(
+        self,
+        low_frequency,
+        high_frequency,
+        duration
+    ) -> None:
+        """
+        start joystick vibration
+
+        :param low_frequency:
+        :param high_frequency:
+        :param duration: duration in ms (0=inf)
+        """
+
+    def stop_rumble(self) -> None:
+        """
+        stop joystick vibration
+        """
 
     def __str__(self) -> str:
         return (

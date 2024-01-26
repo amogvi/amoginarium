@@ -13,10 +13,11 @@ import typing as tp
 import inspect
 
 
-from ._console_colors import CC, get_fg_color
+from ._console_colors import CC, get_fg_color, terminal_link
 
 
 def run_with_debug(
+            show_call: bool = True,
             show_args: bool = False,
             on_fail: tp.Callable[[Exception], tp.Any] = ...,
             reraise_errors: bool = False
@@ -34,11 +35,16 @@ def run_with_debug(
             prefix_time = prefix[:-3]
             prefix_arrow = prefix[-3:]
 
-            if ic.enabled:
+            func_name = terminal_link(
+                inspect.getfile(func),
+                func.__name__
+            )
+
+            if ic.enabled and show_call:
                 print(
                     f"{get_fg_color(36)}{prefix_time}"
                     f"{get_fg_color(247)}{prefix_arrow}{CC.fg.GREEN}"
-                    f"running {CC.fg.MAGENTA}{func.__name__}"
+                    f"running {CC.fg.MAGENTA}{func_name}"
                     f"{get_fg_color(36)}, called by {CC.fg.MAGENTA}"
                     f"{calframe[1][3]}{get_fg_color(36)}" +
                     (f"with {args, kwargs}" if show_args else "") +
@@ -53,7 +59,8 @@ def run_with_debug(
             except Exception as e:
                 if ic.enabled:
                     print(
-                        f"{CC.fg.CYAN}{ic.prefix()}{CC.fg.RED}"
+                        f"{get_fg_color(36)}{prefix_time}"
+                        f"{get_fg_color(247)}{prefix_arrow}{CC.fg.RED}"
                         f"{'':#>5} exception in {CC.fg.YELLOW}"
                         f"\"{func.__name__}\"{CC.fg.RED} {'':#<5}\n"
                         f"{format_exc()}{CC.ctrl.ENDC}"

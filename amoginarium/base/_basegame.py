@@ -13,11 +13,11 @@ from icecream import ic
 import pygame as pg
 import json
 
-from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
-from ..controllers import Controllers, Controller
+from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected, HasBars, WallBouncer
+from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug
+from ..entities import Player, Island
 from ..logic import SimpleLock
-from ..entities import Player
 
 
 def current_time() -> str:
@@ -83,6 +83,12 @@ class BaseGame:
                 )(getattr(self, func))
             )
 
+        Island.random_between(
+            100, 1800,
+            500, 900,
+            10, 1500,
+            10, 20
+        )
         self._game_start = 0
 
     def time_since_start(self) -> str:
@@ -127,8 +133,13 @@ class BaseGame:
                         ic("pygame end")
                         return self.end()
 
-            # handle groups
+                    case pg.JOYDEVICEADDED:
+                        joy = pg.joystick.Joystick(event.device_index)
+                        GameController(joy)
+
+            # # handle groups
             Drawn.draw(self.middle_layer)
+            HasBars.draw(self.top_layer)
 
             # show fps
             fps_surf = self.font.render(
@@ -193,6 +204,7 @@ class BaseGame:
             # update entities
             GravityAffected.calculate_gravity(delta)
             FrictionXAffected.calculate_friction(delta)
+            WallBouncer.update()
 
             Updated.update(delta)
 
@@ -237,6 +249,10 @@ class BaseGame:
         """
         stop everything
         """
+        # check if end has already been called
+        if not self.running:
+            return
+
         # tell threads to exit
         self.running = False
 
