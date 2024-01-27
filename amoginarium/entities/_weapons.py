@@ -8,9 +8,10 @@ Author:
 Nilusink
 """
 from time import perf_counter
+from random import randint
 import pygame as pg
 
-from ..base import GravityAffected, CollisionDestroyed, Bullets
+from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ._base_entity import VisibleEntity, Entity
 from ..logic import Vec2
 
@@ -32,7 +33,7 @@ class Bullet(VisibleEntity):
 
         if casing:
             self.image = pg.transform.scale(
-                pg.image.load(self._image_path),
+                pg.image.load(self._image_path).convert_alpha(),
                 size.xy
             )
 
@@ -57,10 +58,10 @@ class Bullet(VisibleEntity):
             initial_velocity=initial_velocity.copy()
         )
 
-        self.add(GravityAffected, CollisionDestroyed)
+        self.add(GravityAffected)
 
         if not casing:
-            self.add(Bullets)
+            self.add(Bullets, CollisionDestroyed)
 
     @property
     def on_ground(self) -> bool:
@@ -95,3 +96,19 @@ class Bullet(VisibleEntity):
         self.acceleration.y *= 2
 
         super().update(delta)
+
+    def kill(self) -> None:
+        if all([
+            self._casing,
+            0 <= self.position.x <= 1920
+        ]):
+            self.remove(
+                Updated,
+                CollisionDestroyed,
+                GravityAffected
+            )
+            return
+
+        self.remove(Drawn)
+
+        super().kill()

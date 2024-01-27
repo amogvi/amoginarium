@@ -62,10 +62,10 @@ class GameController(Controller):
 
     def update(self, delta):
         # read controlls
-        self._keys.up = self.btn(ControllerKeybmap.r1)
-        self._keys.right = self.btn(ControllerKeybmap.b)
-        self._keys.down = self.btn(ControllerKeybmap.a)
-        self._keys.left = self.btn(ControllerKeybmap.x)
+        self._keys.shoot = self.btn(ControllerKeybmap.r2)
+        self._keys.reload = self.btn(ControllerKeybmap.b)
+        self._keys.jump = self.btn(ControllerKeybmap.a)
+        self._keys.idk = self.btn(ControllerKeybmap.x)
 
         # set joystick position
         self._keys.joy_x = self.joy_curve(

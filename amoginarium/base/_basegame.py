@@ -9,6 +9,7 @@ Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, sleep, strftime
+from random import randint
 from icecream import ic
 import pygame as pg
 import json
@@ -16,6 +17,7 @@ import json
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets
 from ..controllers import Controllers, Controller, GameController
+from ._scrolling_background import ScrollingBackground
 from ..debugging import run_with_debug
 from ..entities import Player, Island
 from ..logic import SimpleLock
@@ -40,6 +42,7 @@ class BaseGame:
 
         ic.configureOutput(prefix=self.time_since_start)
 
+        # multi-threading stuff
         self._pool = ThreadPoolExecutor(max_workers=5)
 
         # debugging
@@ -75,6 +78,15 @@ class BaseGame:
         self.top_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.font = pg.font.SysFont(None, 24)
         pg.display.set_caption("amoginarium")
+
+        # initialize background
+        rbg = randint(1, 4)
+        print(rbg)
+        self._background = ScrollingBackground(
+            "assets/images/bg1/layers/7.png",
+            f"assets/images/bg{rbg}/bg.png",
+            *window_size
+        )
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -118,19 +130,27 @@ class BaseGame:
         """
         last = perf_counter()
         last_fps_print = 0
+
+        # draw background once
+        self._background.draw(self.lowest_layer)
         while self.running:
             now = perf_counter()
 
+            delta = now-last
+
             # only update fps every 200ms (for readability)
             if now - last_fps_print > .2:
-                self._pygame_fps = int(1 / (now - last))
+                self._pygame_fps = int(1 / delta)
                 last_fps_print = now
 
             # clear screen
-            self.screen.fill((52, 189, 235, 255))
-            self.lowest_layer.fill((0, 0, 0, 0))
+            self.screen.fill((0, 0, 0, 0))
             self.middle_layer.fill((0, 0, 0, 0))
             self.top_layer.fill((0, 0, 0, 0))
+
+            # draw background
+            # self._background.scroll(delta * 10)
+            # self._background.draw(self.screen)
 
             # handle events
             for event in pg.event.get():
@@ -169,7 +189,7 @@ class BaseGame:
             pg.display.update()
 
             self._pygame_loop_times.append(
-                (now - self._game_start, now - last)
+                (now - self._game_start, delta)
             )
             last = now
 

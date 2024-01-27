@@ -16,10 +16,10 @@ from ..logic import Vec2
 
 @dataclass
 class Controlls():
-    up: bool = False
-    down: bool = False
-    left: bool = False
-    right: bool = False
+    jump: bool = False
+    reload: bool = False
+    shoot: bool = False
+    idk: bool = False
     joy_btn: bool = False
     joy_x: float = .5
     joy_y: float = .5
@@ -105,20 +105,16 @@ class Controller:
         """
 
     @property
-    def up(self) -> bool:
-        return self._keys.up
+    def jump(self) -> bool:
+        return self._keys.jump
 
     @property
-    def down(self) -> bool:
-        return self._keys.down
+    def reload(self) -> bool:
+        return self._keys.reload
 
     @property
-    def left(self) -> bool:
-        return self._keys.left
-
-    @property
-    def right(self) -> bool:
-        return self._keys.right
+    def shoot(self) -> bool:
+        return self._keys.shoot
 
     @property
     def joy_btn(self) -> bool:
@@ -158,13 +154,3 @@ class Controller:
         """
         stop joystick vibration
         """
-
-    def __str__(self) -> str:
-        return (
-            "<controller: "
-            f"{int(self.left)}{int(self.right)}{int(self.up)}{int(self.down)},"
-            f" x: {self.joy_x}, y: {self.joy_y}>"
-        )
-
-    def __repr__(self) -> str:
-        return str(self)

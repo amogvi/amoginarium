@@ -18,8 +18,8 @@ from ..logic import Vec2
 
 
 class Player(LRImageEntity):
-    _image_right_path: str = "assets/images/amogus64right.png"
-    _image_left_path: str = "assets/images/amogus64left.png"
+    _image_right_path: str = "assets/images/gunogus64right.png"
+    _image_left_path: str = "assets/images/gunogus64left.png"
     _gun_path: str = "assets/images/minigun.png"
     _movement_acceleration: float = 700
     _current_reload_time: float = 0
@@ -48,29 +48,17 @@ class Player(LRImageEntity):
 
         # load image
         self._image_right = pg.transform.scale(
-            pg.image.load(self._image_right_path),
-            (size, size)
+            pg.image.load(self._image_right_path).convert_alpha(),
+            (size*2, size)
         )
         self._image_left = pg.transform.scale(
-            pg.image.load(self._image_left_path),
-            (size, size)
-        )
-        self._gun_image_right = pg.transform.rotate(
-            pg.transform.scale(
-                pg.image.load(self._gun_path),
-                (size * .8, size * .8)
-            ),
-            20
-        )
-        self._gun_image_left = pg.transform.flip(
-            self._gun_image_right,
-            1,
-            0
+            pg.image.load(self._image_left_path).convert_alpha(),
+            (size*2, size)
         )
         self._image_size = size
 
         super().__init__(
-            size=Vec2.from_cartesian(size, size),
+            size=Vec2.from_cartesian(size*2, size),
             facing=facing,
             initial_position=initial_position,
             initial_velocity=initial_velocity,
@@ -152,13 +140,16 @@ class Player(LRImageEntity):
             self.acceleration.x -= self._movement_acceleration
             self.facing.x = -1
 
-        if self._controller.down and self.on_ground:
+        if self._controller.jump and self.on_ground:
             self._controller.rumble(300, 2000, 500)
             self.velocity.y = -400
 
+        if self._controller.reload:
+            self._mag_state = 0
+            self._current_reload_time = self._reload_time
+
         # directional stuff
-        direc = self.facing.x
-        if self._controller.up:
+        if self._controller.shoot:
             # shoot a bit up
             shot_direction = self.facing.copy()
             shot_direction.y = -.4
@@ -168,14 +159,6 @@ class Player(LRImageEntity):
 
         # run update from parent classes
         super().update(delta)
-
-        self.image.blit(
-            self._gun_image_right if direc >= 0 else self._gun_image_left,
-            (
-                5 * (direc),
-                5
-            )
-        )
 
     def shoot(
         self,
@@ -201,7 +184,7 @@ class Player(LRImageEntity):
         Bullet(
             self,
             self.position + Vec2.from_cartesian(0, 7)
-            + direction.normalize() * self.size.length * .4,
+            + direction.normalize() * self.size.length * .45,
             direction.normalize() * 1300 + self.velocity
         )
 
