@@ -100,7 +100,9 @@ class BaseGame:
         styleized time since game start
         gamestart being time since `mainloop` was called
         """
-        return f"{round(perf_counter() - self._game_start, 4): >8} |> "
+        t_ms = round(perf_counter() - self._game_start, 4)
+        t1, t2 = str(t_ms).split(".")
+        return f"{t1: >4}.{t2: <4} |> "
 
     def _add_controller(self, controller: Controller) -> None:
         """

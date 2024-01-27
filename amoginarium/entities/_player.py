@@ -10,7 +10,7 @@ Nilusink
 import pygame as pg
 
 from ..base._groups import GravityAffected, FrictionXAffected, HasBars
-from ..base._groups import CollisionDestroyed
+from ..base._groups import CollisionDestroyed, WallCollider
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
 from ._weapons import Bullet
@@ -29,6 +29,8 @@ class Player(LRImageEntity):
     _mag_state: int = 0
     _max_hp: int = 80
     _hp: int = 0
+
+    on_wall: bool = False
 
     def __init__(
         self,
@@ -78,6 +80,7 @@ class Player(LRImageEntity):
             CollisionDestroyed,
             FrictionXAffected,
             GravityAffected,
+            WallCollider,
             HasBars
         )
 
@@ -94,7 +97,7 @@ class Player(LRImageEntity):
     @property
     def on_ground(self) -> bool:
         out = self.position.y + self.size.y / 2 > 900
-        return out
+        return out or WallCollider.collides_with(self)
 
     @property
     def parent(self) -> bool:

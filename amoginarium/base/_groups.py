@@ -24,6 +24,31 @@ class _Drawn(pg.sprite.Group):
     ...
 
 
+class _Walls(pg.sprite.Group):
+    ...
+
+
+class _WallCollider(pg.sprite.Group):
+    """
+    requires:
+    on_wall: bool
+    """
+    def collides_with(self, sprite) -> None:
+        collides = False
+        with suppress(AttributeError):
+            for wall in Walls.sprites():
+                sprite: tp.Any
+                wall: tp.Any
+                if all([
+                    pg.sprite.collide_rect(sprite, wall),
+                    wall.position.y <= sprite.position.y + sprite.size.y,
+                    sprite.position.y + sprite.size.y <= wall.position.y + wall.size.y
+                ]):
+                    collides = True
+        
+        return collides
+
+
 class _GravityAffected(pg.sprite.Group):
     """
     required methods / variables:
@@ -200,10 +225,12 @@ class _CollisionDestroyed(pg.sprite.Group):
 
 # initialize groups
 Drawn = _Drawn()
+Walls = _Walls()
 Bullets = _Bullets()
 HasBars = _HasBars()
 Updated = _Updated()
 WallBouncer = _WallBouncer()
+WallCollider = _WallCollider()
 GravityAffected = _GravityAffected()
 FrictionXAffected = _FrictionXAffected()
 CollisionDestroyed = _CollisionDestroyed()

@@ -12,6 +12,7 @@ import typing as tp
 import random
 
 from ..entities import VisibleEntity
+from ..base import Walls
 from ..logic import Vec2
 
 
@@ -36,6 +37,8 @@ class Island(VisibleEntity):
             ),
             border_radius=2
         )
+
+        self.add(Walls)
 
     @classmethod
     def random_between(

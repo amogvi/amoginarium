@@ -60,11 +60,7 @@ for n_bullet in range(len(av_bullets_ys_tmp)):
 
     if len(times) > 0:
         av = sum(times) / len(times)
-        print(f"\n\n{n_bullet}:\t", times, av)
         av_bullet_ys[n_bullet] = av
-
-# print(av_bullets_ys_tmp)
-print(av_bullet_ys)
 
 
 ax1 = plt.subplot(2, 1, 1)
