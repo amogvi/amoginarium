@@ -10,26 +10,44 @@ Nilusink
 from time import perf_counter
 import pygame as pg
 
-from ._base_entity import VisibleEntity
-from ..base import GravityAffected
+from ..base import GravityAffected, CollisionDestroyed, Bullets
+from ._base_entity import VisibleEntity, Entity
 from ..logic import Vec2
 
 
 class Bullet(VisibleEntity):
     _image_path: str = "assets/images/bullet.png"
+    _damage: float = 1
 
     def __init__(
         self,
+        parent: Entity,
         initial_position: Vec2,
         initial_velocity: Vec2,
         casing: bool = False
     ) -> None:
         size = Vec2.from_cartesian(10, 10)
+        self._casing = casing
+        self._parent = parent
 
-        self.image = pg.transform.scale(
-            pg.image.load(self._image_path),
-            size.xy
-        )
+        if casing:
+            self.image = pg.transform.scale(
+                pg.image.load(self._image_path),
+                size.xy
+            )
+
+        else:
+            self.image = pg.surface.Surface(
+                size.xy,
+                pg.SRCALPHA,
+                32
+            )
+            pg.draw.circle(
+                self.image,
+                (163, 157, 116),
+                (size / 2).xy,
+                size.length / 4
+            )
 
         self._start_time = perf_counter()
 
@@ -39,14 +57,28 @@ class Bullet(VisibleEntity):
             initial_velocity=initial_velocity.copy()
         )
 
-        self.add(GravityAffected)
+        self.add(GravityAffected, CollisionDestroyed)
 
-        # if not casing:
-        #     self.add(WallBouncer)
+        if not casing:
+            self.add(Bullets)
 
     @property
     def on_ground(self) -> bool:
         return self.position.y > 1000
+
+    @property
+    def damage(self) -> float:
+        return self._damage if not self._casing else 0
+
+    @property
+    def parent(self) -> Entity:
+        return self._parent
+
+    def hit(self, _damage: float) -> None:
+        self.kill()
+
+    def hit_someone(self, target_hp: float) -> None:
+        self.kill()
 
     def update(self, delta):
         if any([

@@ -13,7 +13,8 @@ from icecream import ic
 import pygame as pg
 import json
 
-from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected, HasBars, WallBouncer
+from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
+from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets
 from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug
 from ..entities import Player, Island
@@ -45,6 +46,9 @@ class BaseGame:
         self._logic_loop_times: list[tuple[float, float]] = []
         self._pygame_loop_times: list[tuple[float, float]] = []
         self._comms_loop_times: list[tuple[float, float]] = []
+
+        # time since start, n_bullets, loop_time
+        self._n_bullets_times: list[tuple[float, float, float]] = []
 
         self._pygame_fps: int = 0
         self._logic_fps: int = 0
@@ -208,8 +212,13 @@ class BaseGame:
 
             Updated.update(delta)
 
+            CollisionDestroyed.update()
+
             self._logic_loop_times.append(
                 (now - self._game_start, delta)
+            )
+            self._n_bullets_times.append(
+                (now - self._game_start, len(Bullets.sprites()), delta)
             )
             last = now
 
@@ -224,7 +233,7 @@ class BaseGame:
             now = perf_counter()
             delta = now - last
 
-            sleep(.1)
+            sleep(.05)
 
             self._comms_ping = int(delta * 1000)
             self._comms_loop_times.append(
@@ -267,6 +276,7 @@ class BaseGame:
             json.dump({
                 "logic": self._logic_loop_times,
                 "comms": self._comms_loop_times,
+                "bullets": self._n_bullets_times,
                 "pygame": self._pygame_loop_times
             }, out)
 

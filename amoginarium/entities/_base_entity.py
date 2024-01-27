@@ -38,6 +38,13 @@ class Entity(pg.sprite.Sprite):
         self.update_rect()
         self.add(Updated)
 
+    @property
+    def position_center(self) -> Vec2:
+        """
+        return the center of the sprite
+        """
+        return self.position + self.size / 2
+
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
 

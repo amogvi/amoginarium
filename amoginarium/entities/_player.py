@@ -9,7 +9,8 @@ Nilusink
 """
 import pygame as pg
 
-from ..base import GravityAffected, FrictionXAffected, HasBars
+from ..base._groups import GravityAffected, FrictionXAffected, HasBars
+from ..base._groups import CollisionDestroyed
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
 from ._weapons import Bullet
@@ -21,7 +22,12 @@ class Player(LRImageEntity):
     _image_left_path: str = "assets/images/amogus64left.png"
     _gun_path: str = "assets/images/minigun.png"
     _movement_acceleration: float = 700
-    _max_hp: int = 20
+    _current_reload_time: float = 0
+    _reload_time: float = 3
+    _recoil_factor: float = .7
+    _mag_size: int = 80
+    _mag_state: int = 0
+    _max_hp: int = 80
     _hp: int = 0
 
     def __init__(
@@ -34,6 +40,7 @@ class Player(LRImageEntity):
 
     ) -> None:
         self._hp = self._max_hp
+        self._mag_state = self._mag_size
 
         self._controller = controller
 
@@ -67,7 +74,14 @@ class Player(LRImageEntity):
             initial_velocity=initial_velocity,
         )
 
-        self.add(GravityAffected, FrictionXAffected, HasBars)
+        self.add(
+            CollisionDestroyed,
+            FrictionXAffected,
+            GravityAffected,
+            HasBars
+        )
+
+        self._n_hits = 0
 
     @property
     def max_hp(self) -> int:
@@ -77,10 +91,56 @@ class Player(LRImageEntity):
     def hp(self) -> int:
         return self._hp
 
+    @property
+    def on_ground(self) -> bool:
+        out = self.position.y + self.size.y / 2 > 900
+        return out
+
+    @property
+    def parent(self) -> bool:
+        return self
+
+    def get_mag_state(self, max_out: float) -> float:
+        """
+        returns the current mag size (rising when reloading)
+        :param max_out: output size
+        :returns: x out of max_out, value of current state
+        """
+        if not self._current_reload_time:
+            return self._mag_state * (
+                max_out / self._mag_size
+            ), self._mag_state
+
+        return (
+            (
+                (
+                    self._reload_time-self._current_reload_time
+                ) / self._reload_time
+            ) * max_out,
+            round(self._current_reload_time, 2)
+        )
+
+    def hit(self, damage: float) -> None:
+        """
+        deal damage to the player
+        """
+        self._hp -= damage
+
+        # check for player death
+        if self._hp <= 0:
+            self.kill()
+
     def update(self, delta):
-        self._controller.update(delta)
+        # update reloads
+        if self._current_reload_time > 0:
+            self._current_reload_time -= delta
+
+        if self._current_reload_time < 0 and self._mag_state <= 0:
+            self._current_reload_time = 0
+            self._mag_state = self._mag_size
 
         # update controls
+        self._controller.update(delta)
         if self._controller.joy_x > 0:
             self.acceleration.x += self._movement_acceleration
             self.facing.x = 1
@@ -103,9 +163,6 @@ class Player(LRImageEntity):
                 shot_direction
             )
 
-            # recoil
-            self.acceleration.x -= self._movement_acceleration * .7 * direc
-
         # run update from parent classes
         super().update(delta)
 
@@ -117,11 +174,6 @@ class Player(LRImageEntity):
             )
         )
 
-    @property
-    def on_ground(self) -> bool:
-        out = self.position.y + self.size.y / 2 > 900
-        return out
-
     def shoot(
         self,
         direction: Vec2
@@ -129,8 +181,22 @@ class Player(LRImageEntity):
         """
         shoot a bullet
         """
+        # check if mag is empty
+        if self._mag_state <= 0:
+            if self._current_reload_time == 0:
+                self._current_reload_time = self._reload_time
+
+            return
+
+        # recoil
+        recoil = direction * self._movement_acceleration * self._recoil_factor
+        self.acceleration -= recoil
+
+        self._mag_state -= 1
+
         # actual bullet
         Bullet(
+            self,
             self.position + Vec2.from_cartesian(0, 7)
             + direction.normalize() * self.size.length * .4,
             direction.normalize() * 1300 + self.velocity
@@ -140,6 +206,7 @@ class Player(LRImageEntity):
         casing_direction = direction.normalize()
         casing_direction.x *= -.3
         Bullet(
+            self,
             self.position + Vec2.from_cartesian(0, 7)
             + casing_direction * self.size.length * .4,
             casing_direction * 500 + self.velocity,
