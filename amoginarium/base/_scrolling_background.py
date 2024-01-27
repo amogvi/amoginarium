@@ -7,7 +7,6 @@ A parralax-scrolling background
 Author:
 Nilusink
 """
-from icecream import ic
 import pygame as pg
 import os
 

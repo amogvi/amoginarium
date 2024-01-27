@@ -8,10 +8,10 @@ Author:
 Nilusink
 """
 from time import perf_counter
-from random import randint
 import pygame as pg
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
+from ..base import WallCollider
 from ._base_entity import VisibleEntity, Entity
 from ..logic import Vec2
 
@@ -65,7 +65,7 @@ class Bullet(VisibleEntity):
 
     @property
     def on_ground(self) -> bool:
-        return self.position.y > 1000
+        return self.position.y > 1000 or WallCollider.collides_with(self)
 
     @property
     def damage(self) -> float:

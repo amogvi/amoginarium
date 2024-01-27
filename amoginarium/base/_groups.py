@@ -35,17 +35,17 @@ class _WallCollider(pg.sprite.Group):
     """
     def collides_with(self, sprite) -> None:
         collides = False
-        with suppress(AttributeError):
-            for wall in Walls.sprites():
-                sprite: tp.Any
-                wall: tp.Any
-                if all([
-                    pg.sprite.collide_rect(sprite, wall),
-                    wall.position.y <= sprite.position.y + sprite.size.y,
-                    sprite.position.y + sprite.size.y <= wall.position.y + wall.size.y
-                ]):
-                    collides = True
-        
+        for wall in Walls.sprites():
+            sprite: tp.Any
+            wall: tp.Any
+            if all([
+                wall.position.y - wall.size.y / 2 <= sprite.position.y + sprite.size.y / 2,
+                sprite.position.y + sprite.size.y / 2 <= wall.position.y + wall.size.y / 2,
+                wall.position.x - wall.size.x / 2 <= sprite.position.x + sprite.size.x / 4,
+                sprite.position.x - sprite.size.x / 4 <= wall.position.x + wall.size.x / 2
+            ]):
+                collides = True
+
         return collides
 
 
@@ -63,7 +63,7 @@ class _GravityAffected(pg.sprite.Group):
             sprite.acceleration.y = 9.81 * 50
 
             with suppress(AttributeError):
-                if sprite.on_ground:
+                if sprite.on_ground and sprite.velocity.y > 0:
                     while sprite.on_ground:
                         sprite.position.y -= 0.01
 
