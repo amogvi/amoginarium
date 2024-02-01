@@ -25,7 +25,7 @@ class KeyboardControlls:
 
 class KeyboardController(Controller):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__("0")
 
         self._controlls = KeyboardControlls()
 

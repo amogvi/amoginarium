@@ -8,6 +8,7 @@ Author:
 Nilusink
 """
 from dataclasses import dataclass
+from icecream import ic
 import typing as tp
 
 
@@ -21,8 +22,8 @@ class Controlls():
     shoot: bool = False
     idk: bool = False
     joy_btn: bool = False
-    joy_x: float = .5
-    joy_y: float = .5
+    joy_x: float = 0
+    joy_y: float = 0
 
 
 class _Controllers:
@@ -39,6 +40,22 @@ class _Controllers:
     @property
     def controllers(self) -> list["Controller"]:
         return self._controllers.copy()
+
+    def exists(self, cid: str) -> bool:
+        """
+        checks if a controller already exists
+        """
+        return cid in [c.id for c in self._controllers]
+
+    def get_by_id(self, cid: str) -> "Controller":
+        if not self.exists(cid):
+            raise ValueError(f"No controller with id \"{cid}\" exists!")
+
+        for controller in self._controllers:
+            if controller.id == cid:
+                return controller
+
+        return None
 
     def append(self, controller: "Controller") -> None:
         """
@@ -89,6 +106,11 @@ class Controller:
     _keys: Controlls
 
     def __new__(cls, *args, **kwargs) -> tp.Self:
+        ic(args, kwargs)
+        if len(args) > 0:
+            if Controllers.exists(args[0]):
+                return Controllers.get_by_id(args[0])
+
         new_instance = super(Controller, cls).__new__(cls)
 
         # append every new instance to controllers
@@ -96,13 +118,16 @@ class Controller:
 
         return new_instance
 
-    def __init__(self) -> None:
+    def __init__(self, id: str) -> None:
         self._keys = Controlls()
+        self._id = id
 
-    def update(self, delta: float) -> None:
+    @property
+    def id(self) -> str:
         """
-        update the control inputs
+        unique id
         """
+        return self._id
 
     @property
     def jump(self) -> bool:
@@ -136,6 +161,24 @@ class Controller:
     def controlls(self) -> Controlls:
         return self._keys.copy()
 
+    @classmethod
+    def joy_curve(
+        value: float,
+        deadzone: float = 0
+    ) -> float:
+        """
+        apply a specific curve for joystick values
+        """
+        value = (value / abs(value)) * max(0, abs(value) - deadzone)
+
+        return value * (1 / (1 - deadzone))
+
+    def update(self, delta: float) -> None:
+        """
+        update the control inputs
+        """
+        raise NotImplementedError("tried to call base-controller update")
+
     def rumble(
         self,
         low_frequency,
@@ -154,3 +197,9 @@ class Controller:
         """
         stop joystick vibration
         """
+
+    def __str__(self) -> None:
+        return f"<{self.__class__.__name__}, id=\"{self.id}\">"
+
+    def __repr__(self) -> str:
+        return self.__str__()

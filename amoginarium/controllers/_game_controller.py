@@ -40,25 +40,13 @@ class GameController(Controller):
 
         self._joystick = pygame_joystick
 
-        super().__init__()
+        super().__init__(self._joystick.get_name())
 
     def btn(self, n_button: int) -> bool:
         """
         get a joystick button
         """
         return self._joystick.get_button(n_button)
-
-    def joy_curve(
-        self,
-        value: float,
-        deadzone: float = 0
-    ) -> float:
-        """
-        apply a specific curve for joystick values
-        """
-        value = (value / abs(value)) * max(0, abs(value) - deadzone)
-
-        return value * (1 / (1 - deadzone))
 
     def update(self, delta):
         # read controlls

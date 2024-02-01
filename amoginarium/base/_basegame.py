@@ -8,10 +8,11 @@ Author:
 Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
-from time import perf_counter, sleep, strftime
+from time import perf_counter, strftime
 from random import randint
 from icecream import ic
 import pygame as pg
+import asyncio
 import json
 
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
@@ -20,6 +21,7 @@ from ..controllers import Controllers, Controller, GameController
 from ._scrolling_background import ScrollingBackground
 from ..debugging import run_with_debug
 from ..entities import Player, Island
+from ..communications import Server
 from ..logic import SimpleLock
 
 
@@ -34,7 +36,8 @@ class BaseGame:
 
     def __init__(
                 self,
-                debug: bool = False
+                debug: bool = False,
+                game_port: int = 12345
             ) -> None:
         # configure icecream
         if not debug:
@@ -65,6 +68,9 @@ class BaseGame:
             self._add_controller
         )
 
+        # server setup
+        self._server = Server(("0.0.0.0", game_port))
+
         # initialize pygame stuff
         pg.init()
         pg.font.init()
@@ -81,7 +87,6 @@ class BaseGame:
 
         # initialize background
         rbg = randint(1, 4)
-        print(rbg)
         self._background = ScrollingBackground(
             "assets/images/bg1/layers/7.png",
             f"assets/images/bg{rbg}/bg.png",
@@ -250,20 +255,9 @@ class BaseGame:
         """
         start communications
         """
-        last = perf_counter()
-        while self.running:
-            now = perf_counter()
-            delta = now - last
-
-            sleep(.05)
-
-            self._comms_ping = int(delta * 1000)
-            self._comms_loop_times.append(
-                (now - self._game_start, delta)
-            )
-            last = now
-
+        asyncio.run(self._server.run())
         ic("comms end")
+        return
 
     def mainloop(self) -> None:
         """
@@ -286,6 +280,9 @@ class BaseGame:
 
         # tell threads to exit
         self.running = False
+
+        # tell server to shutdown
+        self._server.close()
 
         ic("stopping game...")
 
