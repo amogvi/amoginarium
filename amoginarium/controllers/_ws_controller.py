@@ -25,11 +25,11 @@ class WsController(Controller):
         pass
 
     def update_controlls(
-        self,
-        trigger_btn: bool = ...,
-        joy_btn: bool = ...,
-        joy_x: float = ...,
-        joy_y: float = ...
+            self,
+            trigger_btn: bool = ...,
+            joy_btn: bool = ...,
+            joy_x: float = ...,
+            joy_y: float = ...
     ) -> None:
         """
         controlls updates provided by the server

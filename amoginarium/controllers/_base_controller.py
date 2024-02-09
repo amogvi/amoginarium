@@ -106,11 +106,11 @@ class Controller:
     _keys: Controlls
 
     def __new__(cls, *args, **kwargs) -> tp.Self:
-        ic(args, kwargs)
-        if len(args) > 0:
-            if Controllers.exists(args[0]):
-                ic()
-                return Controllers.get_by_id(args[0])
+        if len(args) > 1:
+            cid = args[0]
+            if Controllers.exists(cid):
+                ic("re-linking already existing controller", cid)
+                return Controllers.get_by_id(cid)
 
         new_instance = super(Controller, cls).__new__(cls)
 
@@ -162,17 +162,61 @@ class Controller:
     def controlls(self) -> Controlls:
         return self._keys.copy()
 
-    @classmethod
+    # @classmethod  # making this a classmethod didn't work for some reason
     def joy_curve(
-        value: float,
-        deadzone: float = 0
+            self,
+            value: float,
+            x_deadzone: float = 0,
+            y_deadzone: float = 0,
+            x_saturation: float = 1,
+            y_saturation: float = 1
     ) -> float:
         """
-        apply a specific curve for joystick values
-        """
-        value = (value / abs(value)) * max(0, abs(value) - deadzone)
+        apply a specific curve for joystick values (rangin from -1 to 1)
 
-        return value * (1 / (1 - deadzone))
+        :param value: value to process
+        :param x_deadzone: percentage of how much input shuold be ignore
+            around 0
+        :param y_deadzone: min value for output
+        :param x_saturation: how much input should be 100%
+        :param y_saturation: max value of output (could theoretically be >1)
+
+        example::
+
+            # raw controller data
+            x_raw = controller.get_axis(0)
+
+            # filtered value
+            r_processed = joy_curve(
+                value=x_raw,
+                x_deadzone=.2,  # 20% input deadzone
+                y_deadzone=.2,  # 20% output deadzone
+                x_saturation=.8 # 80% input saturation
+            )
+
+        .. image:: joystick_curve.png
+        """
+        # get sign (either +1 or -1)
+        value_sign = (value / abs(value)) if value != 0 else 1
+
+        # look, I just tried putting the variables in random orders and somehow
+        # it workd, I never even knew why
+        value = max(
+            0,
+            abs(value) - x_deadzone
+        ) * (
+            (1 - y_deadzone) / (x_saturation - x_deadzone)
+        )
+
+        # input deadzone should habe priority
+        if value == 0:
+            return 0
+
+        # apply output deadzone
+        value = value_sign * min(1, value + y_deadzone)
+
+        # apply y saturation
+        return value * y_saturation
 
     def update(self, delta: float) -> None:
         """

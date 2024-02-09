@@ -34,13 +34,17 @@ class GameController(Controller):
     x_dead_zone: float = .1
     y_dead_zone: float = .1
 
-    def __init__(self, pygame_joystick: pg.joystick.JoystickType) -> None:
+    def __init__(
+            self,
+            id: str,
+            pygame_joystick: pg.joystick.JoystickType
+    ) -> None:
         if not pygame_joystick.get_init():
             pygame_joystick.init()
 
         self._joystick = pygame_joystick
 
-        super().__init__(self._joystick.get_name())
+        super().__init__(id)
 
     def btn(self, n_button: int) -> bool:
         """
@@ -58,20 +62,20 @@ class GameController(Controller):
         # set joystick position
         self._keys.joy_x = self.joy_curve(
             self._joystick.get_axis(0),
-            self.x_dead_zone
+            x_deadzone=self.x_dead_zone
         )
         self._keys.joy_y = self.joy_curve(
             self._joystick.get_axis(1),
-            self.y_dead_zone
+            x_deadzone=self.y_dead_zone
         )
 
         self._keys.joy_btn = self.btn(ControllerKeybmap.ljoy)
 
     def rumble(
-        self,
-        low_frequency,
-        high_frequency,
-        duration
+            self,
+            low_frequency,
+            high_frequency,
+            duration
     ) -> None:
         self._joystick.rumble(low_frequency, high_frequency, duration)
 

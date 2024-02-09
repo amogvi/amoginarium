@@ -58,8 +58,8 @@ class Server:
     running = True
 
     def __init__(
-        self,
-        address: tuple[str, int]
+            self,
+            address: tuple[str, int]
     ) -> None:
         self._host = address[0]
         self._ip = address[1]

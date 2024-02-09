@@ -35,10 +35,10 @@ class BaseGame:
     _last_logic: float
 
     def __init__(
-                self,
-                debug: bool = False,
-                game_port: int = 12345
-            ) -> None:
+            self,
+            debug: bool = False,
+            game_port: int = 12345
+    ) -> None:
         # configure icecream
         if not debug:
             ic.disable()
@@ -166,7 +166,7 @@ class BaseGame:
 
                     case pg.JOYDEVICEADDED:
                         joy = pg.joystick.Joystick(event.device_index)
-                        GameController(joy)
+                        GameController(joy.get_guid(), joy)
 
             # # handle groups
             Drawn.draw(self.middle_layer)
