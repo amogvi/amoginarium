@@ -109,6 +109,7 @@ class Controller:
         ic(args, kwargs)
         if len(args) > 0:
             if Controllers.exists(args[0]):
+                ic()
                 return Controllers.get_by_id(args[0])
 
         new_instance = super(Controller, cls).__new__(cls)
