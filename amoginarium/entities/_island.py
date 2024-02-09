@@ -17,8 +17,14 @@ from ..logic import Vec2
 
 
 class Island(VisibleEntity):
-    def __init__(self, start: Vec2, size: Vec2) -> None:
+    def __init__(
+            self,
+            start: Vec2,
+            size: Vec2,
+            texture: str = ...
+    ) -> None:
         self._size = size.copy()
+        self._texture = texture
 
         super().__init__(
             size=size,
