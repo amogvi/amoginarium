@@ -76,7 +76,7 @@ class BaseGame:
         pg.font.init()
 
         screen_info = pg.display.Info()
-        window_size = (screen_info.current_w, screen_info.current_h)
+        window_size = (screen_info.current_w // 2 - 100, screen_info.current_h - 100)
 
         self.screen = pg.display.set_mode(window_size, pg.SCALED)
         self.lowest_layer = pg.Surface(window_size, pg.SRCALPHA, 32)

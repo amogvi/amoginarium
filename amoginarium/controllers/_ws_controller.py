@@ -36,11 +36,11 @@ class WsController(Controller):
         """
         # apply a curve to the controller values
         self._keys.joy_x = self.joy_curve(
-            joy_x,
+            (joy_x - 5e3) / 5e3,
             self.x_dead_zone
         )
         self._keys.joy_y = self.joy_curve(
-            joy_y,
+            (joy_y - 5e3) / 5e3,
             self.y_dead_zone
         )
 

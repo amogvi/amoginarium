@@ -22,7 +22,6 @@ from ..logic import WDTimer
 
 class InitiateMessage(pydantic.BaseModel):
     m: tp.Literal["i"]
-    t: float  # timeout in s
     id: str  # itentifier
 
 
@@ -30,7 +29,7 @@ class UpdateMessage(pydantic.BaseModel):
     m: tp.Literal["u"]
     x: int
     y: int
-    b: bool  # joy button
+    j: bool  # joy button
     t: bool  # trigger button
 
 
@@ -70,36 +69,37 @@ class Server:
         ic("ws new client", ws.host, ws.port)
 
         # receive controller id
-        i_raw = await ws.recv()
-        i_data = InitiateMessage.model_validate_json(i_raw)
+        #i_raw = await ws.recv()
+        #i_data = InitiateMessage.model_validate_json(i_raw)
 
-        controller = WsController(i_data.id)
+        ic("past send message")
+        controller: WsController | None = None   # WsController(i_data.id)
 
-        ping_timer = WDTimer(i_data.t)
-        pong_timer = WDTimer(5)
+        #ping_timer = WDTimer(i_data.t)
+        #pong_timer = WDTimer(5)
 
-        def ping():
-            """
-            sends a ping and starts the pong timer
-            """
-            ws.send(PingMessage().model_dump_json())
-            pong_timer.refresh()
-
-        def pong():
-            """
-            pong timeout
-
-            closes websocket
-            """
-            ws.close(CloseCode.PROTOCOL_ERROR, "timeout")
-            ic(f"controller didn't respond after {i_data.t + 5}s")
+        #def ping():
+        #    """
+        #    sends a ping and starts the pong timer
+        #    """
+        #    ws.send(PingMessage().model_dump_json())
+        #    pong_timer.refresh()
+#
+        #def pong():
+        #    """
+        #    pong timeout
+#
+        #    closes websocket
+        #    """
+        #    ws.close(CloseCode.PROTOCOL_ERROR, "timeout")
+        #    ic(f"controller didn't respond after {i_data.t + 5}s")
 
         # set timeout functinos
-        ping_timer.on_timeout(ping)
-        pong_timer.on_timeout(pong)
+        #ping_timer.on_timeout(ping)
+        #pong_timer.on_timeout(pong)
 
         # start ping timer
-        ping_timer.refresh()
+        #ping_timer.refresh()
 
         try:
             # wait for messages
@@ -111,30 +111,42 @@ class Server:
                 )
 
                 # refresh ping timer on every message
-                ping_timer.refresh()
+                #ping_timer.refresh()
 
                 match data:
                     case InitiateMessage():
-                        await ws.close(
-                            CloseCode.PROTOCOL_ERROR,
-                            "initiate message has already been sent"
-                        )
-                        raise RuntimeError(
-                            "received initiate message more than once"
-                        )
+                        if controller is not None:
+                            await ws.close(
+                                CloseCode.PROTOCOL_ERROR,
+                                "initiate message has already been sent"
+                            )
+                            raise RuntimeError(
+                                "received initiate message more than once"
+                            )
+                        else:
+                            ic("Initial message received")
+                            controller = WsController(data.id)
 
                     case UpdateMessage():
-                        ic("received data", message)
-                        controller.update_controlls(
-                            data.t,
-                            data.b,
-                            data.x,
-                            data.y
-                        )
+                        if controller is None:
+                            await ws.close(
+                                CloseCode.PROTOCOL_ERROR,
+                                "received update before initiate"
+                            )
+                            raise RuntimeError(
+                                "received update before initiate"
+                            )
+                        else:
+                            controller.update_controlls(
+                                data.t,
+                                data.j,
+                                data.x,
+                                data.y
+                            )
 
-                    case PongMessage():
-                        ic("pong")
-                        pong_timer.cancel()
+                    #case PongMessage():
+                    #    ic("pong")
+                    #    pong_timer.cancel()
 
                     case _:
                         ic("unknown message type recived")
@@ -149,9 +161,6 @@ class Server:
                 await ws.close(1000)
 
             ic("ws client disconnected", ws.close_code, ws.close_reason)
-
-            ping_timer.cancel()
-            pong_timer.cancel()
 
     async def run(self) -> None:
         """
