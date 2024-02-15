@@ -69,37 +69,49 @@ class Server:
         ic("ws new client", ws.host, ws.port)
 
         # receive controller id
-        #i_raw = await ws.recv()
-        #i_data = InitiateMessage.model_validate_json(i_raw)
+        try:
+            # wait 20 seconds for the initiate message
+            # if the client didn't send the message before 20 sec,
+            # disconnect the client
+            i_raw = await asyncio.wait_for(ws.recv(), 20)
+
+            # convert received data to json
+            i_data = InitiateMessage.model_validate_json(i_raw)
+
+        # except timeout and invalid message errors
+        except Exception:
+            await ws.close(CloseCode.PROTOCOL_ERROR)
+            ic("client didn't send initiate message")
+            return
 
         ic("past send message")
         controller: WsController | None = None   # WsController(i_data.id)
 
-        #ping_timer = WDTimer(i_data.t)
-        #pong_timer = WDTimer(5)
+        ping_timer = WDTimer(i_data.t)
+        pong_timer = WDTimer(5)
 
-        #def ping():
-        #    """
-        #    sends a ping and starts the pong timer
-        #    """
-        #    ws.send(PingMessage().model_dump_json())
-        #    pong_timer.refresh()
-#
-        #def pong():
-        #    """
-        #    pong timeout
-#
-        #    closes websocket
-        #    """
-        #    ws.close(CloseCode.PROTOCOL_ERROR, "timeout")
-        #    ic(f"controller didn't respond after {i_data.t + 5}s")
+        def ping():
+            """
+            sends a ping and starts the pong timer
+            """
+            ws.send(PingMessage().model_dump_json())
+            pong_timer.refresh()
+
+        def pong():
+            """
+            pong timeout
+
+            closes websocket
+            """
+            ws.close(CloseCode.PROTOCOL_ERROR, "timeout")
+            ic(f"controller didn't respond after {i_data.t + 5}s")
 
         # set timeout functinos
-        #ping_timer.on_timeout(ping)
-        #pong_timer.on_timeout(pong)
+        ping_timer.on_timeout(ping)
+        pong_timer.on_timeout(pong)
 
         # start ping timer
-        #ping_timer.refresh()
+        ping_timer.refresh()
 
         try:
             # wait for messages
@@ -111,42 +123,25 @@ class Server:
                 )
 
                 # refresh ping timer on every message
-                #ping_timer.refresh()
+                ping_timer.refresh()
 
                 match data:
                     case InitiateMessage():
-                        if controller is not None:
-                            await ws.close(
-                                CloseCode.PROTOCOL_ERROR,
-                                "initiate message has already been sent"
-                            )
-                            raise RuntimeError(
-                                "received initiate message more than once"
-                            )
-                        else:
-                            ic("Initial message received")
-                            controller = WsController(data.id)
+                        raise RuntimeError(
+                            "received initiate message more than once"
+                        )
 
                     case UpdateMessage():
-                        if controller is None:
-                            await ws.close(
-                                CloseCode.PROTOCOL_ERROR,
-                                "received update before initiate"
-                            )
-                            raise RuntimeError(
-                                "received update before initiate"
-                            )
-                        else:
-                            controller.update_controlls(
-                                data.t,
-                                data.j,
-                                data.x,
-                                data.y
-                            )
+                        controller.update_controlls(
+                            data.t,
+                            data.j,
+                            data.x,
+                            data.y
+                        )
 
-                    #case PongMessage():
-                    #    ic("pong")
-                    #    pong_timer.cancel()
+                    case PongMessage():
+                        ic("pong")
+                        pong_timer.cancel()
 
                     case _:
                         ic("unknown message type recived")

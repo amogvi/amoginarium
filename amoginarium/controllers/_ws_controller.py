@@ -13,6 +13,7 @@ from ._base_controller import Controller
 class WsController(Controller):
     x_dead_zone: float = .1
     y_dead_zone: float = .1
+    joy_thresh: float = 5e3
 
     def __init__(self, controller_id: str) -> None:
         super().__init__(controller_id)
@@ -36,11 +37,11 @@ class WsController(Controller):
         """
         # apply a curve to the controller values
         self._keys.joy_x = self.joy_curve(
-            (joy_x - 5e3) / 5e3,
+            (joy_x - self.joy_thresh) / self.joy_thresh,
             self.x_dead_zone
         )
         self._keys.joy_y = self.joy_curve(
-            (joy_y - 5e3) / 5e3,
+            (joy_y - self.joy_thresh) / self.joy_thresh,
             self.y_dead_zone
         )
 
