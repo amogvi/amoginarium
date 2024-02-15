@@ -169,7 +169,8 @@ class Controller:
             x_deadzone: float = 0,
             y_deadzone: float = 0,
             x_saturation: float = 1,
-            y_saturation: float = 1
+            y_saturation: float = 1,
+            curve: float = 0  # TODO: curve
     ) -> float:
         """
         apply a specific curve for joystick values (rangin from -1 to 1)

@@ -285,16 +285,24 @@ def main() -> None:
 
     # buttons for top menu
     def open_file():
-        map.load_map(crossfiledialog.open_file(
+        path = crossfiledialog.open_file(
             "open map",
             os.getcwd()
-        ))
+        )
+        if path == "":
+            return
+
+        map.load_map(path)
 
     def save_file():
-        map.save_map(crossfiledialog.save_file(
+        path = crossfiledialog.save_file(
             "save map",
             os.getcwd()
-        ))
+        )
+        if path == "":
+            return
+
+        map.save_map(path)
 
     load_btn = widgets.Button(
         menu_frame,
