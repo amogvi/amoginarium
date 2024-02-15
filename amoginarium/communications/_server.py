@@ -17,7 +17,6 @@ import pydantic
 import asyncio
 
 from ..controllers import WsController
-from ..logic import WDTimer
 
 
 class InitiateMessage(pydantic.BaseModel):
@@ -85,33 +84,7 @@ class Server:
             return
 
         ic("past send message")
-        controller: WsController | None = None   # WsController(i_data.id)
-
-        ping_timer = WDTimer(i_data.t)
-        pong_timer = WDTimer(5)
-
-        def ping():
-            """
-            sends a ping and starts the pong timer
-            """
-            ws.send(PingMessage().model_dump_json())
-            pong_timer.refresh()
-
-        def pong():
-            """
-            pong timeout
-
-            closes websocket
-            """
-            ws.close(CloseCode.PROTOCOL_ERROR, "timeout")
-            ic(f"controller didn't respond after {i_data.t + 5}s")
-
-        # set timeout functinos
-        ping_timer.on_timeout(ping)
-        pong_timer.on_timeout(pong)
-
-        # start ping timer
-        ping_timer.refresh()
+        controller: WsController = WsController(i_data.id)
 
         try:
             # wait for messages
@@ -121,9 +94,6 @@ class Server:
                     message,
                     strict=False
                 )
-
-                # refresh ping timer on every message
-                ping_timer.refresh()
 
                 match data:
                     case InitiateMessage():
@@ -138,10 +108,6 @@ class Server:
                             data.x,
                             data.y
                         )
-
-                    case PongMessage():
-                        ic("pong")
-                        pong_timer.cancel()
 
                     case _:
                         ic("unknown message type recived")
