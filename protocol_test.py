@@ -29,17 +29,26 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     print(f"TCP_KEEPINTVL={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
     print(f"TCP_KEEPCNT={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
 
-    data = await reader.read(100)
-    message = data.decode()
-    addr = writer.get_extra_info('peername')
 
-    print(f"Received {message!r} from {addr!r}")
+    while True:
+        data: bytes = None
+        try:
+            data = await reader.read(100)
+        except TimeoutError:
+            print("Client timed out, disconnecting")
+            writer.close()
+            return
 
-    print(f"Send: {message!r}")
-    writer.write(data)
-    await writer.drain()
+        message = ":".join("{:02x}".format(c) for c in data)
+        addr = writer.get_extra_info('peername')
 
-    await asyncio.sleep(20);
+        print(f"Received {":".join(hex(x) for x in data)} ({len(message)} bytes) from {addr!r}")
+
+        print(f"Send: {message!r}")
+        writer.write(data)
+        await writer.drain()
+
+        #await asyncio.sleep(20);
 
     print("Close the connection")
     writer.close()
