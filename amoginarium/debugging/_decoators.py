@@ -17,11 +17,11 @@ from ._console_colors import CC, get_fg_color, terminal_link
 
 
 def run_with_debug(
-            show_call: bool = True,
-            show_args: bool = False,
-            on_fail: tp.Callable[[Exception], tp.Any] = ...,
-            reraise_errors: bool = False
-        ):
+    show_call: bool = True,
+    show_args: bool = False,
+    on_fail: tp.Callable[[Exception], tp.Any] = ...,
+    reraise_errors: bool = False
+):
     """
     run a function with debugging and exception printing
     """
@@ -51,7 +51,7 @@ def run_with_debug(
                     f"{CC.ctrl.ENDC}"
                 )
 
-            # executre function
+            # execute function
             try:
                 return func(*args, **kwargs)
 

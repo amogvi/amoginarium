@@ -11,14 +11,28 @@ from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
 from random import randint
 from icecream import ic
+from pygame.locals import DOUBLEBUF, OPENGL
 import pygame as pg
 import asyncio
 import json
 
+from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
+from OpenGL.GL import glMatrixMode, glLoadIdentity, glTranslate, glDisable
+from OpenGL.GL import glVertex, glBegin, glTexCoord2f, glEnd, glGenTextures
+from OpenGL.GL import glFlush, glClearColor, glClear, glBlendFunc
+from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT
+from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER
+from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA
+from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_QUADS
+from OpenGL.GL import GL_PROJECTION, GL_COLOR_BUFFER_BIT
+from OpenGL.GL import GL_DEPTH_BUFFER_BIT, GL_BLEND
+from OpenGL.GL import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from OpenGL.GLU import gluOrtho2D
+
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets
 from ..controllers import Controllers, Controller, GameController
-from ._scrolling_background import ScrollingBackground
+from ._scrolling_background import ScrollingBackground, ParalaxBackground
 from ..debugging import run_with_debug
 from ..entities import Player, Island
 from ..communications import Server
@@ -78,20 +92,33 @@ class BaseGame:
         screen_info = pg.display.Info()
         window_size = (screen_info.current_w, screen_info.current_h)
 
-        self.screen = pg.display.set_mode(window_size, pg.SCALED)
+        self.screen = pg.display.set_mode(window_size, DOUBLEBUF | OPENGL | pg.RESIZABLE)
         self.lowest_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.middle_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.top_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.font = pg.font.SysFont(None, 24)
         pg.display.set_caption("amoginarium")
 
+        # initialize OpenGL stuff
+        glClearColor(*(0, 0, 0, 255))
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluOrtho2D(0, *window_size, 0)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         # initialize background
-        rbg = randint(1, 4)
-        self._background = ScrollingBackground(
-            "assets/images/bg1/layers/7.png",
-            f"assets/images/bg{rbg}/bg.png",
+        self._background = ParalaxBackground(
+            "assets/images/bg1",
             *window_size
         )
+        # rbg = randint(1, 4)
+        # self._background = ScrollingBackground(
+        #     "assets/images/bg1/layers/7.png",
+        #     f"assets/images/bg{rbg}/bg.png",
+        #     *window_size
+        # )
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -117,7 +144,13 @@ class BaseGame:
         styleized time since game start
         gamestart being time since `mainloop` was called
         """
-        t_ms = round(perf_counter() - self._game_start, 4)
+        if hasattr(self, "_game_start"):
+            t_ms = round(perf_counter() - self._game_start, 4)
+
+        # if game hasn't started yet (bassegame init), set time to -1
+        else:
+            t_ms = -1.0
+
         t1, t2 = str(t_ms).split(".")
         return f"{t1: >4}.{t2: <4} |> "
 
@@ -137,7 +170,6 @@ class BaseGame:
         last_fps_print = 0
 
         # draw background once
-        self._background.draw(self.lowest_layer)
         while self.running:
             now = perf_counter()
 
@@ -149,9 +181,10 @@ class BaseGame:
                 last_fps_print = now
 
             # clear screen
-            self.screen.fill((0, 0, 0, 0))
-            self.middle_layer.fill((0, 0, 0, 0))
-            self.top_layer.fill((0, 0, 0, 0))
+            glClearColor(*(0, 0, 0, 255))
+            # self.screen.fill((0, 0, 0, 0))
+            # self.middle_layer.fill((0, 0, 0, 0))
+            # self.top_layer.fill((0, 0, 0, 0))
 
             # draw background
             # self._background.scroll(delta * 10)
@@ -168,30 +201,35 @@ class BaseGame:
                         joy = pg.joystick.Joystick(event.device_index)
                         GameController(joy.get_guid(), joy)
 
-            # # handle groups
-            Drawn.draw(self.middle_layer)
-            HasBars.draw(self.top_layer)
+            # handle groups
+            # Drawn.draw(self.middle_layer)
+            # HasBars.draw(self.top_layer)
 
-            # show fps
-            fps_surf = self.font.render(
-                f"{self._pygame_fps} FPS (render)", False, (255, 255, 255, 255)
-            )
-            self.top_layer.blit(fps_surf, (0, 0))
-            fps_surf = self.font.render(
-                f"{self._logic_fps} FPS (logic)", False, (255, 255, 255, 255)
-            )
-            self.top_layer.blit(fps_surf, (0, 15))
-            ping_surf = self.font.render(
-                f"{self._comms_ping} ms ping", False, (255, 255, 255, 255)
-            )
-            self.top_layer.blit(ping_surf, (0, 30))
+            # # show fps
+            # fps_surf = self.font.render(
+            #     f"{self._pygame_fps} FPS (render)", False, (255, 255, 255, 255)
+            # )
+            # self.top_layer.blit(fps_surf, (0, 0))
+            # fps_surf = self.font.render(
+            #     f"{self._logic_fps} FPS (logic)", False, (255, 255, 255, 255)
+            # )
+            # self.top_layer.blit(fps_surf, (0, 15))
+            # ping_surf = self.font.render(
+            #     f"{self._comms_ping} ms ping", False, (255, 255, 255, 255)
+            # )
+            # self.top_layer.blit(ping_surf, (0, 30))
 
             # draw layers
-            self.screen.blit(self.lowest_layer, (0, 0))
-            self.screen.blit(self.middle_layer, (0, 0))
-            self.screen.blit(self.top_layer, (0, 0))
+            # self.screen.blit(self.lowest_layer, (0, 0))
+            # self.screen.blit(self.middle_layer, (0, 0))
+            # self.screen.blit(self.top_layer, (0, 0))
+            # glClear(GL_COLOR_BUFFER_BIT)
+            # glLoadIdentity()
+            self._background.scroll(10)
+            self._background.draw(self.lowest_layer)
+            # glutSwapBuffers()
 
-            pg.display.update()
+            pg.display.flip()
 
             self._pygame_loop_times.append(
                 (now - self._game_start, delta)

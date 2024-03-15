@@ -102,7 +102,7 @@ class Server:
                         )
 
                     case UpdateMessage():
-                        controller.update_controlls(
+                        controller.update_controls(
                             data.t,
                             data.j,
                             data.x,

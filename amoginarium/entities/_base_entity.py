@@ -107,7 +107,7 @@ class LRImageEntity(VisibleEntity):
     _image_left: pg.surface.Surface
 
     def __init__(self, *args, **kwargs) -> None:
-        self.image = self._image_right.copy()
+        # self.image = self._image_right.copy()
 
         super().__init__(*args, **kwargs)
 
@@ -120,10 +120,10 @@ class LRImageEntity(VisibleEntity):
         )
 
     def update(self, delta: float) -> None:
-        if self.facing.x > 0:
-            self.image = self._image_right.copy()
+        # if self.facing.x > 0:
+        #     self.image = self._image_right.copy()
 
-        elif self.facing.x < 0:
-            self.image = self._image_left.copy()
+        # elif self.facing.x < 0:
+        #     self.image = self._image_left.copy()
 
         super().update(delta)

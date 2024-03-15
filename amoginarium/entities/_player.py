@@ -47,14 +47,14 @@ class Player(LRImageEntity):
         self._controller = controller
 
         # load image
-        self._image_right = pg.transform.scale(
-            pg.image.load(self._image_right_path).convert_alpha(),
-            (size*2, size)
-        )
-        self._image_left = pg.transform.scale(
-            pg.image.load(self._image_left_path).convert_alpha(),
-            (size*2, size)
-        )
+        # self._image_right = pg.transform.scale(
+        #     pg.image.load(self._image_right_path).convert_alpha(),
+        #     (size*2, size)
+        # )
+        # self._image_left = pg.transform.scale(
+        #     pg.image.load(self._image_left_path).convert_alpha(),
+        #     (size*2, size)
+        # )
         self._image_size = size
 
         super().__init__(
