@@ -16,7 +16,7 @@ from ..logic import Vec2
 
 
 @dataclass
-class Controlls():
+class controls():
     jump: bool = False
     reload: bool = False
     shoot: bool = False
@@ -103,7 +103,7 @@ Controllers = _Controllers()
 
 
 class Controller:
-    _keys: Controlls
+    _keys: controls
 
     def __new__(cls, *args, **kwargs) -> tp.Self:
         if len(args) > 1:
@@ -120,7 +120,7 @@ class Controller:
         return new_instance
 
     def __init__(self, id: str) -> None:
-        self._keys = Controlls()
+        self._keys = controls()
         self._id = id
 
     @property
@@ -159,7 +159,7 @@ class Controller:
         return Vec2.from_cartesian(self.joy_x, self.joy_y)
 
     @property
-    def controlls(self) -> Controlls:
+    def controls(self) -> controls:
         return self._keys.copy()
 
     # @classmethod  # making this a classmethod didn't work for some reason

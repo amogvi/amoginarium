@@ -25,7 +25,7 @@ class WsController(Controller):
         """
         pass
 
-    def update_controlls(
+    def update_controls(
             self,
             trigger_btn: bool = ...,
             joy_btn: bool = ...,
@@ -33,7 +33,7 @@ class WsController(Controller):
             joy_y: float = ...
     ) -> None:
         """
-        controlls updates provided by the server
+        controls updates provided by the server
         """
         # apply a curve to the controller values
         self._keys.joy_x = self.joy_curve(

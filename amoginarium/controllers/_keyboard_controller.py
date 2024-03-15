@@ -15,7 +15,7 @@ from ._base_controller import Controller
 
 
 @dataclass(frozen=True)
-class KeyboardControlls:
+class Keyboardcontrols:
     up: str = pg.K_w
     down: str = pg.K_s
     left: str = pg.K_a
@@ -27,17 +27,17 @@ class KeyboardController(Controller):
     def __init__(self) -> None:
         super().__init__("0")
 
-        self._controlls = KeyboardControlls()
+        self._controls = Keyboardcontrols()
 
     def update(self, delta):
         pressed_keys = pg.key.get_pressed()
 
-        # read controlls
-        up = pressed_keys[self._controlls.up]
-        down = pressed_keys[self._controlls.down]
-        left = pressed_keys[self._controlls.left]
-        right = pressed_keys[self._controlls.right]
-        self._keys.jump = pressed_keys[self._controlls.press]
+        # read controls
+        up = pressed_keys[self._controls.up]
+        down = pressed_keys[self._controls.down]
+        left = pressed_keys[self._controls.left]
+        right = pressed_keys[self._controls.right]
+        self._keys.jump = pressed_keys[self._controls.press]
 
         self._keys.shoot = pressed_keys[pg.K_e]
         self._keys.reload = pressed_keys[pg.K_r]

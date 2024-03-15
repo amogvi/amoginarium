@@ -53,7 +53,7 @@ class GameController(Controller):
         return self._joystick.get_button(n_button)
 
     def update(self, delta):
-        # read controlls
+        # read controls
         self._keys.shoot = self.btn(ControllerKeybmap.r2)
         self._keys.reload = self.btn(ControllerKeybmap.b)
         self._keys.jump = self.btn(ControllerKeybmap.a)
