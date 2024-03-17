@@ -10,25 +10,72 @@ Nilusink
 from contextlib import suppress
 import pygame as pg
 import typing as tp
+import numpy as np
+
+from ..logic import Vec2
 
 
-class _Bullets(pg.sprite.Group):
+class _BaseGroup(pg.sprite.Group):
+    def gl_draw(self) -> None:
+        """
+        draw sprites using the .gl_draw function
+        """
+        for sprite in self.sprites():
+            sprite.gl_draw()
+
+
+class _Bullets(_BaseGroup):
     ...
 
 
-class _Updated(pg.sprite.Group):
+class _Updated(_BaseGroup):
+    world_position: Vec2
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.world_position = Vec2()
+        super().__init__(*args, **kwargs)
+
+
+class _Drawn(_BaseGroup):
     ...
 
 
-class _Drawn(pg.sprite.Group):
+class _Walls(_BaseGroup):
     ...
 
 
-class _Walls(pg.sprite.Group):
-    ...
+class _Players(_BaseGroup):
+    def get_max_position(self) -> Vec2:
+        max_pos = Vec2()
+        for sprite in self.sprites():
+            if sprite.position.x > max_pos.x:
+                max_pos = sprite.position.copy()
+
+        return max_pos
+
+    def get_min_position(self) -> Vec2:
+        min_pos = np.inf
+        for sprite in self.sprites():
+            if sprite.position.x < min_pos.x:
+                min_pos = sprite.position.copy()
+
+        return min_pos
+
+    def get_position_extremes(self) -> tuple[Vec2, Vec2]:
+        max_pos = Vec2()
+        min_pos = Vec2.from_cartesian(np.inf, 0)
+
+        for sprite in self.sprites():
+            if sprite.position.x > max_pos.x:
+                max_pos = sprite.position.copy()
+
+            if sprite.position.x < min_pos.x:
+                min_pos = sprite.position.copy()
+
+        return min_pos, max_pos
 
 
-class _WallCollider(pg.sprite.Group):
+class _WallCollider(_BaseGroup):
     """
     requires:
     on_wall: bool
@@ -49,7 +96,7 @@ class _WallCollider(pg.sprite.Group):
         return collides
 
 
-class _GravityAffected(pg.sprite.Group):
+class _GravityAffected(_BaseGroup):
     """
     required methods / variables:
     velocity: Vec2
@@ -71,7 +118,7 @@ class _GravityAffected(pg.sprite.Group):
                     sprite.velocity.y = 0
 
 
-class _FrictionXAffected(pg.sprite.Group):
+class _FrictionXAffected(_BaseGroup):
     def calculate_friction(self, delta: float) -> None:
         for sprite in self.sprites():
             with suppress(AttributeError):
@@ -80,7 +127,7 @@ class _FrictionXAffected(pg.sprite.Group):
                 sprite.velocity.x *= 1 - (0.5 * delta)
 
 
-class _HasBars(pg.sprite.Group):
+class _HasBars(_BaseGroup):
     """
     required methods / variables:
     hp: float
@@ -137,7 +184,7 @@ class _HasBars(pg.sprite.Group):
                 )
 
 
-class _WallBouncer(pg.sprite.Group):
+class _WallBouncer(_BaseGroup):
     """
     required methods / variables:
     velocity: Vec2
@@ -161,7 +208,7 @@ class _WallBouncer(pg.sprite.Group):
                     sprite.velocity.y = -abs(sprite.velocity.y)
 
 
-class _CollisionDestroyed(pg.sprite.Group):
+class _CollisionDestroyed(_BaseGroup):
     """
     required methods / variables
     damage: float (optional, use if collision should damage the other object)
@@ -226,6 +273,7 @@ class _CollisionDestroyed(pg.sprite.Group):
 # initialize groups
 Drawn = _Drawn()
 Walls = _Walls()
+Players = _Players()
 Bullets = _Bullets()
 HasBars = _HasBars()
 Updated = _Updated()

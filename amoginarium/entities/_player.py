@@ -7,10 +7,11 @@ defines a player
 Author:
 Nilusink
 """
-import pygame as pg
+# import pygame as pg
 
 from ..base._groups import GravityAffected, FrictionXAffected, HasBars
-from ..base._groups import CollisionDestroyed, WallCollider
+from ..base._groups import CollisionDestroyed, WallCollider, Players
+from ..render_bindings import load_texture
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
 from ._weapons import Bullet
@@ -46,7 +47,15 @@ class Player(LRImageEntity):
 
         self._controller = controller
 
-        # load image
+        # load textures
+        self._texture_left, _ = load_texture(
+            self._image_left_path,
+            (size * 2, size)
+        )
+        self._texture_right, _ = load_texture(
+            self._image_right_path,
+            (size * 2, size)
+        )
         # self._image_right = pg.transform.scale(
         #     pg.image.load(self._image_right_path).convert_alpha(),
         #     (size*2, size)
@@ -69,6 +78,7 @@ class Player(LRImageEntity):
             FrictionXAffected,
             GravityAffected,
             WallCollider,
+            Players,
             HasBars
         )
 

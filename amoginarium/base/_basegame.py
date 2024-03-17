@@ -9,34 +9,29 @@ Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
-from random import randint
 from icecream import ic
+from contextlib import suppress
 from pygame.locals import DOUBLEBUF, OPENGL
 import pygame as pg
 import asyncio
 import json
 
-from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
-from OpenGL.GL import glMatrixMode, glLoadIdentity, glTranslate, glDisable
-from OpenGL.GL import glVertex, glBegin, glTexCoord2f, glEnd, glGenTextures
-from OpenGL.GL import glFlush, glClearColor, glClear, glBlendFunc
-from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT
-from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER
-from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA
-from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_QUADS
-from OpenGL.GL import GL_PROJECTION, GL_COLOR_BUFFER_BIT
-from OpenGL.GL import GL_DEPTH_BUFFER_BIT, GL_BLEND
-from OpenGL.GL import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from OpenGL.GL import glEnable, glClearColor, glBlendFunc
+from OpenGL.GL import glMatrixMode, glLoadIdentity
+from OpenGL.GL import GL_PROJECTION, GL_SRC_ALPHA
+from OpenGL.GL import GL_BLEND
+from OpenGL.GL import GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GLU import gluOrtho2D
 
+from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
-from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets
 from ..controllers import Controllers, Controller, GameController
-from ._scrolling_background import ScrollingBackground, ParalaxBackground
+from ._scrolling_background import ParalaxBackground
 from ..debugging import run_with_debug
 from ..entities import Player, Island
 from ..communications import Server
 from ..logic import SimpleLock
+# from ..render_bindings import render_text
 
 
 def current_time() -> str:
@@ -92,7 +87,10 @@ class BaseGame:
         screen_info = pg.display.Info()
         window_size = (screen_info.current_w, screen_info.current_h)
 
-        self.screen = pg.display.set_mode(window_size, DOUBLEBUF | OPENGL | pg.RESIZABLE)
+        self.screen = pg.display.set_mode(
+            window_size,
+            DOUBLEBUF | OPENGL | pg.RESIZABLE
+        )
         self.lowest_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.middle_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
         self.top_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
@@ -111,7 +109,8 @@ class BaseGame:
         # initialize background
         self._background = ParalaxBackground(
             "assets/images/bg1",
-            *window_size
+            *window_size,
+            parallax_multiplier=1.6
         )
         # rbg = randint(1, 4)
         # self._background = ScrollingBackground(
@@ -168,6 +167,7 @@ class BaseGame:
         """
         last = perf_counter()
         last_fps_print = 0
+        clock = pg.time.Clock()
 
         # draw background once
         while self.running:
@@ -180,16 +180,6 @@ class BaseGame:
                 self._pygame_fps = int(1 / delta)
                 last_fps_print = now
 
-            # clear screen
-            glClearColor(*(0, 0, 0, 255))
-            # self.screen.fill((0, 0, 0, 0))
-            # self.middle_layer.fill((0, 0, 0, 0))
-            # self.top_layer.fill((0, 0, 0, 0))
-
-            # draw background
-            # self._background.scroll(delta * 10)
-            # self._background.draw(self.screen)
-
             # handle events
             for event in pg.event.get():
                 match event.type:
@@ -201,14 +191,41 @@ class BaseGame:
                         joy = pg.joystick.Joystick(event.device_index)
                         GameController(joy.get_guid(), joy)
 
+            # update logic
+            self._update_logic(delta, now)
+
+            # clear screen
+            glClearColor(*(0, 0, 0, 255))
+            self.screen.fill((0, 0, 0, 0))
+            self.middle_layer.fill((0, 0, 0, 0))
+            self.top_layer.fill((0, 0, 0, 0))
+
+            # draw background
+            min_player_pos, max_player_pos = Players.get_position_extremes()
+
+            background_pos_right = self._background.position\
+                + self.screen.get_width() - 60
+            background_pos_left = self._background.position + 60
+
+            if max_player_pos.x > background_pos_right:
+                self._background.scroll(delta * 5)
+                Updated.world_position.x = self._background.position
+
+            elif min_player_pos.x < background_pos_left:
+                self._background.scroll(-delta * 5)
+                Updated.world_position.x = self._background.position
+
+            self._background.draw(self.lowest_layer)
+
             # handle groups
-            # Drawn.draw(self.middle_layer)
-            # HasBars.draw(self.top_layer)
+            Drawn.gl_draw()
+            HasBars.gl_draw()
 
             # # show fps
             # fps_surf = self.font.render(
             #     f"{self._pygame_fps} FPS (render)", False, (255, 255, 255, 255)
             # )
+
             # self.top_layer.blit(fps_surf, (0, 0))
             # fps_surf = self.font.render(
             #     f"{self._logic_fps} FPS (logic)", False, (255, 255, 255, 255)
@@ -219,15 +236,11 @@ class BaseGame:
             # )
             # self.top_layer.blit(ping_surf, (0, 30))
 
-            # draw layers
-            # self.screen.blit(self.lowest_layer, (0, 0))
-            # self.screen.blit(self.middle_layer, (0, 0))
-            # self.screen.blit(self.top_layer, (0, 0))
-            # glClear(GL_COLOR_BUFFER_BIT)
-            # glLoadIdentity()
-            self._background.scroll(10)
-            self._background.draw(self.lowest_layer)
-            # glutSwapBuffers()
+            # render_text(
+            #     f"{self._pygame_fps} FPS (render)",
+            #     0, 0,
+            #     self.font
+            # )
 
             pg.display.flip()
 
@@ -235,6 +248,8 @@ class BaseGame:
                 (now - self._game_start, delta)
             )
             last = now
+
+            clock.tick(60)
 
         ic("pygame end")
 
@@ -258,36 +273,40 @@ class BaseGame:
                 self._logic_fps = int(1 / delta)
                 last_fps_print = now
 
-            # check for new controllers
-            if len(self._new_controllers) > 0:
-                self._new_controllers_lock.aquire()
-                tmp = self._new_controllers.copy()
-                self._new_controllers.clear()
-                self._new_controllers_lock.release()
+            self._update_logic(delta)
 
-                for new_controller in tmp:
-                    # spawn new player
-                    Player(controller=new_controller)
-                    ic(new_controller, Player)
-
-            # update entities
-            GravityAffected.calculate_gravity(delta)
-            FrictionXAffected.calculate_friction(delta)
-            WallBouncer.update()
-
-            Updated.update(delta)
-
-            CollisionDestroyed.update()
-
-            self._logic_loop_times.append(
-                (now - self._game_start, delta)
-            )
-            self._n_bullets_times.append(
-                (now - self._game_start, len(Bullets.sprites()), delta)
-            )
             last = now
 
         ic("logic end")
+
+    def _update_logic(self, delta, now) -> None:
+        # check for new controllers
+        if len(self._new_controllers) > 0:
+            self._new_controllers_lock.aquire()
+            tmp = self._new_controllers.copy()
+            self._new_controllers.clear()
+            self._new_controllers_lock.release()
+
+            for new_controller in tmp:
+                # spawn new player
+                Player(controller=new_controller)
+                ic(new_controller, Player)
+
+        # update entities
+        GravityAffected.calculate_gravity(delta)
+        FrictionXAffected.calculate_friction(delta)
+        WallBouncer.update()
+
+        Updated.update(delta)
+
+        CollisionDestroyed.update()
+
+        self._logic_loop_times.append(
+            (now - self._game_start, delta)
+        )
+        self._n_bullets_times.append(
+            (now - self._game_start, len(Bullets.sprites()), delta)
+        )
 
     def _run_comms(self) -> None:
         """
@@ -303,8 +322,8 @@ class BaseGame:
         """
         self._game_start = perf_counter()
 
-        self._pool.submit(self._run_logic)
-        self._pool.submit(self._run_comms)
+        # self._pool.submit(self._run_logic)
+        # self._pool.submit(self._run_comms)
         self._run_pygame()
 
     @run_with_debug()
@@ -320,7 +339,8 @@ class BaseGame:
         self.running = False
 
         # tell server to shutdown
-        self._server.close()
+        with suppress(RuntimeError):
+            self._server.close()
 
         ic("stopping game...")
 

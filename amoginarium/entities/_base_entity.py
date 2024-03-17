@@ -10,6 +10,9 @@ Nilusink
 import pygame as pg
 import math as m
 
+from icecream import ic
+
+from ..render_bindings import draw_textured_quad
 from ..base import Updated, Drawn
 from ..logic import Vec2
 
@@ -65,6 +68,9 @@ class Entity(pg.sprite.Sprite):
         self.last_angle = self.velocity.angle
 
         self.update_rect()
+    
+    def gl_draw(self) -> None:
+        ...
 
 
 class VisibleEntity(Entity):
@@ -103,8 +109,8 @@ class ImageEntity(VisibleEntity):
 
 
 class LRImageEntity(VisibleEntity):
-    _image_right: pg.surface.Surface
-    _image_left: pg.surface.Surface
+    _texture_left: int
+    _texture_right: int
 
     def __init__(self, *args, **kwargs) -> None:
         # self.image = self._image_right.copy()
@@ -127,3 +133,15 @@ class LRImageEntity(VisibleEntity):
         #     self.image = self._image_left.copy()
 
         super().update(delta)
+
+    def gl_draw(self) -> None:
+        ic(Updated.world_position.x)
+
+        draw_textured_quad(
+            self._texture_right if self.facing.x < 0 else self._texture_left,
+            self.rect.x - Updated.world_position.x,
+            self.rect.y - Updated.world_position.y,
+            self.size.x,
+            self.size.y
+        )
+        # glRotated(degree, 0, 0, 1)
