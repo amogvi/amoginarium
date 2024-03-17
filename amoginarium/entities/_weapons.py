@@ -8,17 +8,32 @@ Author:
 Nilusink
 """
 from time import perf_counter
-import pygame as pg
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
+from ..render_bindings import load_texture, draw_circle
+from ._base_entity import ImageEntity, Entity
 from ..base import WallCollider
-from ._base_entity import VisibleEntity, Entity
 from ..logic import Vec2
 
 
-class Bullet(VisibleEntity):
-    _image_path: str = "assets/images/bullet.png"
+BULLET_PATH = "assets/images/bullet.png"
+
+
+class Bullet(ImageEntity):
+    _image_path: str = BULLET_PATH
+    _bullet_texture: int = ...
     _damage: float = 1
+
+    def __new__(cls, *args, **kwargs) -> None:
+        # only load texture once
+        if cls._bullet_texture is ...:
+            cls.load_textures()
+
+        return super(Bullet, cls).__new__(cls)
+
+    @classmethod
+    def load_textures(cls) -> None:
+        cls._bullet_texture, _ = load_texture(BULLET_PATH, (10, 10))
 
     def __init__(
         self,
@@ -31,28 +46,12 @@ class Bullet(VisibleEntity):
         self._casing = casing
         self._parent = parent
 
-        if casing:
-            self.image = pg.transform.scale(
-                pg.image.load(self._image_path).convert_alpha(),
-                size.xy
-            )
-
-        else:
-            self.image = pg.surface.Surface(
-                size.xy,
-                pg.SRCALPHA,
-                32
-            )
-            pg.draw.circle(
-                self.image,
-                (163, 157, 116),
-                (size / 2).xy,
-                size.length / 4
-            )
+        texture_id = self._bullet_texture
 
         self._start_time = perf_counter()
 
         super().__init__(
+            texture_id=texture_id,
             size=size,
             initial_position=initial_position.copy(),
             initial_velocity=initial_velocity.copy()
@@ -84,8 +83,8 @@ class Bullet(VisibleEntity):
     def update(self, delta):
         if any([
             self.position.y > 1000,
-            self.position.x < 0,
-            self.position.x > 2000,
+            self.position.x < Updated.world_position.x,
+            self.position.x > Updated.world_position.x + 2000,
             perf_counter() - self._start_time > 2,
             self.on_ground
         ]):
@@ -100,8 +99,9 @@ class Bullet(VisibleEntity):
     def kill(self) -> None:
         if all([
             self._casing,
-            0 <= self.position.x <= 1920
+            not Updated.out_of_bounds_x(self)
         ]):
+            self.position.y -= self.size.y / 2
             self.remove(
                 Updated,
                 CollisionDestroyed,
@@ -112,3 +112,15 @@ class Bullet(VisibleEntity):
         self.remove(Drawn)
 
         super().kill()
+
+    def gl_draw(self) -> None:
+        if not self._casing:
+            draw_circle(
+                self.world_position,
+                self.size.x * .4,
+                5,
+                (163 / 255, 157 / 255, 116 / 255)
+            )
+            return
+
+        return super().gl_draw()

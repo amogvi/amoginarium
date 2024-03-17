@@ -27,8 +27,8 @@ from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
 from ._scrolling_background import ParalaxBackground
+from ..entities import Player, Island, Bullet
 from ..debugging import run_with_debug
-from ..entities import Player, Island
 from ..communications import Server
 from ..logic import SimpleLock
 # from ..render_bindings import render_text
@@ -112,12 +112,6 @@ class BaseGame:
             *window_size,
             parallax_multiplier=1.6
         )
-        # rbg = randint(1, 4)
-        # self._background = ScrollingBackground(
-        #     "assets/images/bg1/layers/7.png",
-        #     f"assets/images/bg{rbg}/bg.png",
-        #     *window_size
-        # )
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -132,10 +126,31 @@ class BaseGame:
 
         Island.random_between(
             100, 1800,
-            500, 900,
+            700, 900,
             10, 1500,
             10, 20
         )
+
+
+        Island.random_between(
+            100, 1800,
+            700, 900,
+            10, 1500,
+            10, 20
+        )
+
+
+        Island.random_between(
+            100, 1800,
+            700, 900,
+            10, 1500,
+            10, 20
+        )
+
+        # load entity textures
+        Player.load_textures()
+        Bullet.load_textures()
+
         self._game_start = 0
 
     def time_since_start(self) -> str:

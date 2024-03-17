@@ -7,10 +7,11 @@ defines the most basic form of an entity
 Author:
 Nilusink
 """
+from OpenGL.GL import glRotated
+# from icecream import ic
 import pygame as pg
 import math as m
 
-from icecream import ic
 
 from ..render_bindings import draw_textured_quad
 from ..base import Updated, Drawn
@@ -48,6 +49,13 @@ class Entity(pg.sprite.Sprite):
         """
         return self.position + self.size / 2
 
+    @property
+    def world_position(self) -> Vec2:
+        """
+        return the position relative to the world center
+        """
+        return self.position - Updated.world_position
+
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
 
@@ -68,9 +76,11 @@ class Entity(pg.sprite.Sprite):
         self.last_angle = self.velocity.angle
 
         self.update_rect()
-    
+
     def gl_draw(self) -> None:
-        ...
+        raise NotImplementedError(
+            f"gl_draw wasn't implemented for \"{self.__class__.__name__}\""
+        )
 
 
 class VisibleEntity(Entity):
@@ -81,31 +91,25 @@ class VisibleEntity(Entity):
 
 
 class ImageEntity(VisibleEntity):
-    image: pg.surface.Surface
     _original_image: pg.surface.Surface
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, texture_id: int, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.image = pg.transform.rotate(
-            self._original_image.copy(),
-            -self.velocity.angle * (180 / m.pi)
-        )
+        self._texture_id = texture_id
 
     def update(self, delta: float) -> None:
-        orig_center = self.rect.center
-        # try:
-        self.image = pg.transform.rotate(
-            self._original_image.copy(),
-            -self.velocity.angle * (180 / m.pi)
-)
-
-        # except pg.error:
-        #     self.image = self._original_image.copy()
-        self.rect = self.image.get_rect(center=orig_center)
-        self.last_angle = self.velocity.angle
-
         super().update(delta)
+
+    def gl_draw(self) -> None:
+        glRotated(-self.velocity.angle * (180 / m.pi), 0, 0, 1)
+        draw_textured_quad(
+            self._texture_id,
+            self.rect.x - Updated.world_position.x,
+            self.rect.y - Updated.world_position.y,
+            self.size.x,
+            self.size.y
+        )
 
 
 class LRImageEntity(VisibleEntity):
@@ -135,8 +139,6 @@ class LRImageEntity(VisibleEntity):
         super().update(delta)
 
     def gl_draw(self) -> None:
-        ic(Updated.world_position.x)
-
         draw_textured_quad(
             self._texture_right if self.facing.x < 0 else self._texture_left,
             self.rect.x - Updated.world_position.x,
@@ -144,4 +146,3 @@ class LRImageEntity(VisibleEntity):
             self.size.x,
             self.size.y
         )
-        # glRotated(degree, 0, 0, 1)

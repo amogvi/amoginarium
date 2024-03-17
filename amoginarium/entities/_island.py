@@ -7,10 +7,10 @@ an island in the sky
 Author:
 Nilusink
 """
-import pygame as pg
 import typing as tp
 import random
 
+from ..render_bindings import draw_rect
 from ..entities import VisibleEntity
 from ..base import Walls
 from ..logic import Vec2
@@ -29,19 +29,6 @@ class Island(VisibleEntity):
         super().__init__(
             size=size,
             initial_position=start
-        )
-
-        self.image = pg.surface.Surface(size.xy)
-        pg.draw.rect(
-            self.image,
-            (168, 92, 50, 255),
-            pg.Rect(
-                self.position.x,
-                self.position.y,
-                self.size.x,
-                self.size.y
-            ),
-            border_radius=2
         )
 
         self.add(Walls)
@@ -68,3 +55,10 @@ class Island(VisibleEntity):
         size = Vec2.from_cartesian(x_size, y_size)
 
         return cls(start, size)
+
+    def gl_draw(self) -> None:
+        draw_rect(
+            self.world_position - self.size / 2,
+            self.size,
+            (.6, .4, .2)
+        )

@@ -7,21 +7,27 @@ defines a player
 Author:
 Nilusink
 """
-# import pygame as pg
-
 from ..base._groups import GravityAffected, FrictionXAffected, HasBars
 from ..base._groups import CollisionDestroyed, WallCollider, Players
-from ..render_bindings import load_texture
+from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
 from ._weapons import Bullet
 from ..logic import Vec2
 
 
+PLAYER_RIGHT_64_PATH = "assets/images/gunogus64right.png"
+PLAYER_OOB_RIGHT_64_PATH = "assets/images/amogusOOB64right.png"
+PLAYER_OOB_LEFT_64_PATH = "assets/images/amogusOOB64left.png"
+
+
 class Player(LRImageEntity):
-    _image_right_path: str = "assets/images/gunogus64right.png"
-    _image_left_path: str = "assets/images/gunogus64left.png"
-    _gun_path: str = "assets/images/minigun.png"
+    _player_right_64_texture: int = ...
+    _player_left_64_texture: int = ...
+    _player_oob_right_1_texture: int = ...
+    _player_oob_right_2_texture: int = ...
+    _player_oob_left_1_texture: int = ...
+    _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
     _current_reload_time: float = 0
     _reload_time: float = 3
@@ -32,6 +38,44 @@ class Player(LRImageEntity):
     _hp: int = 0
 
     on_wall: bool = False
+
+    def __new__(cls, *args, **kwargs) -> None:
+        # only load texture once
+        if cls._player_left_64_texture is ...:
+            cls.load_textures()
+
+        return super(Player, cls).__new__(cls)
+
+    @classmethod
+    def load_textures(cls) -> None:
+        cls._player_right_64_texture, _ = load_texture(
+            PLAYER_RIGHT_64_PATH,
+            (128, 64)
+        )
+        cls._player_left_64_texture, _ = load_texture(
+            PLAYER_RIGHT_64_PATH,
+            (128, 64),
+            mirror="x"
+        )
+
+        cls._player_oob_right_1_texture, _ = load_texture(
+            PLAYER_OOB_RIGHT_64_PATH,
+            (64, 64),
+            mirror="x"
+        )
+        cls._player_oob_right_2_texture, _ = load_texture(
+            PLAYER_OOB_LEFT_64_PATH,
+            (64, 64),
+            mirror="x"
+        )
+        cls._player_oob_left_1_texture, _ = load_texture(
+            PLAYER_OOB_RIGHT_64_PATH,
+            (64, 64),
+        )
+        cls._player_oob_left_2_texture, _ = load_texture(
+            PLAYER_OOB_LEFT_64_PATH,
+            (64, 64),
+        )
 
     def __init__(
         self,
@@ -47,23 +91,24 @@ class Player(LRImageEntity):
 
         self._controller = controller
 
+        if initial_position is ...:
+            initial_position = Players.spawn_point
+
         # load textures
-        self._texture_left, _ = load_texture(
-            self._image_left_path,
-            (size * 2, size)
-        )
-        self._texture_right, _ = load_texture(
-            self._image_right_path,
-            (size * 2, size)
-        )
-        # self._image_right = pg.transform.scale(
-        #     pg.image.load(self._image_right_path).convert_alpha(),
-        #     (size*2, size)
-        # )
-        # self._image_left = pg.transform.scale(
-        #     pg.image.load(self._image_left_path).convert_alpha(),
-        #     (size*2, size)
-        # )
+        if size == 64:
+            self._texture_right = self._player_right_64_texture
+            self._texture_left = self._player_left_64_texture
+
+        else:
+            self._texture_right, _ = load_texture(
+                PLAYER_RIGHT_64_PATH,
+                (size * 2, size)
+            )
+            self._texture_left, _ = load_texture(
+                PLAYER_RIGHT_64_PATH,
+                (size * 2, size),
+                mirror="x"
+            )
         self._image_size = size
 
         super().__init__(
@@ -208,3 +253,43 @@ class Player(LRImageEntity):
             casing_direction * 500 + self.velocity,
             casing=True
         )
+
+    def gl_draw(self) -> None:
+        # check if out of bounds
+        # left of screen
+        if self.world_position.x < 0:
+
+            # facing
+            if self.facing.x > 0:
+                draw_textured_quad(
+                    self._player_oob_left_2_texture,
+                    0, self.world_position.y,
+                    64, 64
+                )
+            else:
+                draw_textured_quad(
+                    self._player_oob_left_1_texture,
+                    0, self.world_position.y,
+                    64, 64
+                )
+            return
+
+        # right of screen
+        elif self.world_position.x > 1920:
+
+            # facing
+            if self.facing.x > 0:
+                draw_textured_quad(
+                    self._player_oob_right_1_texture,
+                    1920 - 64, self.world_position.y,
+                    64, 64
+                )
+            else:
+                draw_textured_quad(
+                    self._player_oob_right_2_texture,
+                    1920 - 64, self.world_position.y,
+                    64, 64
+                )
+            return
+
+        super().gl_draw()
