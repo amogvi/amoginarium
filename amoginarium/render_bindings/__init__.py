@@ -1,2 +1,2 @@
 # from ._utils import render_text
-from ._utils import load_texture, draw_textured_quad
+from ._utils import load_texture, draw_textured_quad, draw_circle, draw_rect

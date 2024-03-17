@@ -8,11 +8,13 @@ Author:
 Nilusink
 """
 from contextlib import suppress
+# from icecream import ic
 import pygame as pg
 import typing as tp
 import numpy as np
 
 from ..logic import Vec2
+from ..render_bindings import draw_rect
 
 
 class _BaseGroup(pg.sprite.Group):
@@ -35,6 +37,27 @@ class _Updated(_BaseGroup):
         self.world_position = Vec2()
         super().__init__(*args, **kwargs)
 
+    def out_of_bounds_x(self, sprite, margin: float = 0) -> bool:
+        return any([
+            self.world_position.x + margin > sprite.position.x,
+            sprite.position.x + margin > self.world_position.x + 1920
+        ])
+
+    def load_textures(self) -> None:
+        """
+        load all textures
+        """
+        # get the different types of entities
+        types = tuple(set([s.__class__ for s in self.sprites()]))
+
+        # load the textures for each different type
+        for t in types:
+
+            # only load textures if the type has a function
+            # to load the textures
+            if hasattr(t, "load_textures"):
+                t.load_textures()
+
 
 class _Drawn(_BaseGroup):
     ...
@@ -45,6 +68,13 @@ class _Walls(_BaseGroup):
 
 
 class _Players(_BaseGroup):
+    @property
+    def spawn_point(self) -> Vec2:
+        """
+        player spawn point
+        """
+        return Vec2.from_cartesian(200, 100)
+
     def get_max_position(self) -> Vec2:
         max_pos = Vec2()
         for sprite in self.sprites():
@@ -62,6 +92,11 @@ class _Players(_BaseGroup):
         return min_pos
 
     def get_position_extremes(self) -> tuple[Vec2, Vec2]:
+        """
+        get min and max positions
+
+        :returns: min, max
+        """
         max_pos = Vec2()
         min_pos = Vec2.from_cartesian(np.inf, 0)
 
@@ -134,7 +169,7 @@ class _HasBars(_BaseGroup):
     max_hp: float
     """
 
-    def draw(self, surface: pg.Surface) -> None:
+    def gl_draw(self) -> None:
         for sprite in self.sprites():
             with suppress(KeyError):
                 sprite: tp.Any
@@ -144,43 +179,33 @@ class _HasBars(_BaseGroup):
                 max_len = sprite.size.x
                 now_len = (sprite.hp / sprite.max_hp) * max_len
 
-                bar_start = sprite.position.copy()
+                bar_start = sprite.world_position.copy()
                 bar_start.x -= sprite.size.x / 2
                 bar_start.y += sprite.size.y / 2 + 10
 
-                pg.draw.rect(
-                    surface,
-                    (0, 0, 0, 128),
-                    pg.Rect(*bar_start.xy, max_len, bar_height)
+                draw_rect(
+                    bar_start,
+                    Vec2.from_cartesian(max_len, bar_height),
+                    (0, 0, 0, .5)
                 )
-                pg.draw.rect(
-                    surface,
-                    (0, 255, 0, 255),
-                    pg.Rect(*bar_start.xy, now_len, bar_height)
+                draw_rect(
+                    bar_start,
+                    Vec2.from_cartesian(now_len, bar_height),
+                    (0, 1, 0, 1)
                 )
 
                 # draw mag / reload bar
                 mag_n, mag_v = sprite.get_mag_state(1000)
                 now_len = (mag_n / 1000) * max_len
-                pg.draw.rect(
-                    surface,
-                    (0, 0, 0, 128),
-                    pg.Rect(
-                        bar_start.x,
-                        bar_start.y + 1.5 * bar_height,
-                        max_len if now_len else 0,
-                        bar_height
-                    )
+                draw_rect(
+                    bar_start + Vec2.from_cartesian(0, 1.5 * bar_height),
+                    Vec2.from_cartesian(max_len if now_len else 0, bar_height),
+                    (0, 0, 0, .5)
                 )
-                pg.draw.rect(
-                    surface,
-                    (155, 155, 255, 255),
-                    pg.Rect(
-                        bar_start.x,
-                        bar_start.y + 1.5 * bar_height,
-                        now_len,
-                        bar_height
-                    )
+                draw_rect(
+                    bar_start + Vec2.from_cartesian(0, 1.5 * bar_height),
+                    Vec2.from_cartesian(now_len, bar_height),
+                    (.55, .55, 1, 1)
                 )
 
 
