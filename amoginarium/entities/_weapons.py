@@ -8,13 +8,12 @@ Author:
 Nilusink
 """
 from time import perf_counter
-from icecream import ic
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ..render_bindings import load_texture, draw_circle
 from ._base_entity import ImageEntity, Entity
+from ..logic import Vec2, Color
 from ..base import WallCollider
-from ..logic import Vec2
 
 
 BULLET_PATH = "assets/images/bullet.png"
@@ -43,9 +42,10 @@ class Bullet(ImageEntity):
         initial_velocity: Vec2,
         base_damage: float = 1,
         casing: bool = False,
-        time_to_life: float = 2
+        time_to_life: float = 2,
+        size: int = 10
     ) -> None:
-        size = Vec2.from_cartesian(10, 10)
+        size = Vec2.from_cartesian(size, size)
         self._casing = casing
         self._parent = parent
         self._base_damage = base_damage
@@ -139,7 +139,7 @@ class Bullet(ImageEntity):
                 self.world_position,
                 self.size.x * .4,
                 5,
-                (163 / 255, 157 / 255, 116 / 255)
+                Color.from_255(255, 255, 60)
             )
             return
 
@@ -164,6 +164,7 @@ class BaseWeapon:
         recoil_factor: float,
         mag_size: int,
         bullet_speed: float,
+        bullet_size: int = 10,
         bullet_damage: float = 1,
         drop_casings: bool = False
     ) -> None:
@@ -276,12 +277,12 @@ class BaseWeapon:
                 casing=True
             )
 
-    def reload(self) -> None:
+    def reload(self, instant: bool = False) -> None:
         """
         reload the weapon
         """
         self._mag_state = 0
-        self._current_reload_time = self._reload_time
+        self._current_reload_time = .1 if instant else self._reload_time
 
 
 class Minigun(BaseWeapon):
@@ -289,11 +290,26 @@ class Minigun(BaseWeapon):
         super().__init__(
             parent,
             reload_time=3,
-            recoil_time=0,
-            recoil_factor=.7,
+            recoil_time=.02,
+            recoil_factor=2,
             mag_size=80,
             bullet_speed=1300,
             bullet_damage=1,
+            drop_casings=drop_casings
+        )
+
+
+class Ak47(BaseWeapon):
+    def __init__(self, parent, drop_casings: bool = False) -> None:
+        super().__init__(
+            parent,
+            reload_time=2.5,
+            recoil_time=.1,
+            recoil_factor=1,
+            mag_size=30,
+            bullet_size=15,
+            bullet_speed=1200,
+            bullet_damage=1.5,
             drop_casings=drop_casings
         )
 
@@ -306,6 +322,7 @@ class Sniper(BaseWeapon):
             recoil_time=2,
             recoil_factor=50,
             mag_size=6,
+            bullet_size=20,
             bullet_speed=2500,
             bullet_damage=10,
             drop_casings=drop_casings
