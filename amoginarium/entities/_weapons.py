@@ -8,6 +8,8 @@ Author:
 Nilusink
 """
 from time import perf_counter
+from random import randint
+# from icecream import ic
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ..render_bindings import load_texture, draw_circle
@@ -163,13 +165,15 @@ class BaseWeapon:
         recoil_time: float,
         recoil_factor: float,
         mag_size: int,
+        inacuracy: float,
         bullet_speed: float,
         bullet_size: int = 10,
         bullet_damage: float = 1,
-        drop_casings: bool = False
+        drop_casings: bool = False,
     ) -> None:
         self.parent = parent
         self._mag_size = mag_size
+        self._inacuracy = inacuracy
         self._reload_time = reload_time
         self._recoil_time = recoil_time
         self._reload_time = reload_time
@@ -177,6 +181,7 @@ class BaseWeapon:
         self._drop_casings = drop_casings
         self._recoil_factor = recoil_factor
         self._bullet_damage = bullet_damage
+        self._bullet_size = bullet_size
 
     @property
     def mag_size(self) -> int:
@@ -246,6 +251,11 @@ class BaseWeapon:
         if self._current_recoil_time > 0:
             return
 
+        # inacuracy
+        offset = randint(-255, 255) / 255
+        offset *= self._inacuracy
+        direction.angle += offset
+
         # recoil
         if hasattr(self.parent, "_movement_acceleration"):
             recoil = direction * self.parent._movement_acceleration
@@ -262,7 +272,8 @@ class BaseWeapon:
             self.parent.position + Vec2.from_cartesian(0, 7)
             + direction.normalize() * self.parent.size.length * .45,
             direction.normalize() * self._bullet_speed + self.parent.velocity,
-            base_damage=self._bullet_damage
+            base_damage=self._bullet_damage,
+            size=self._bullet_size
         )
 
         if self._drop_casings:
@@ -293,8 +304,9 @@ class Minigun(BaseWeapon):
             recoil_time=.02,
             recoil_factor=2,
             mag_size=80,
+            inacuracy=.01093606,
             bullet_speed=1300,
-            bullet_damage=1,
+            bullet_damage=2,
             drop_casings=drop_casings
         )
 
@@ -307,9 +319,10 @@ class Ak47(BaseWeapon):
             recoil_time=.1,
             recoil_factor=1,
             mag_size=30,
-            bullet_size=15,
+            inacuracy=0.03,
+            bullet_size=11,
             bullet_speed=1200,
-            bullet_damage=1.5,
+            bullet_damage=2.5,
             drop_casings=drop_casings
         )
 
@@ -322,7 +335,8 @@ class Sniper(BaseWeapon):
             recoil_time=2,
             recoil_factor=50,
             mag_size=6,
-            bullet_size=20,
+            inacuracy=.00500002,
+            bullet_size=15,
             bullet_speed=2500,
             bullet_damage=10,
             drop_casings=drop_casings

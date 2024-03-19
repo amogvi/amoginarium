@@ -8,11 +8,11 @@ Author:
 Nilusink
 """
 from contextlib import suppress
-from icecream import ic
+# from icecream import ic
 
 from ..base._groups import HasBars, CollisionDestroyed, Players, Updated
 from ..base._groups import GravityAffected
-from ..render_bindings import load_texture, draw_circle
+from ..render_bindings import load_texture, draw_circle, draw_dashed_circle
 from ..logic import Vec2, calculate_launch_angle, Color
 from ._weapons import BaseWeapon, Sniper, Ak47
 from ._base_entity import VisibleEntity
@@ -79,8 +79,11 @@ class BaseTurret(VisibleEntity):
         """
         deal damage to the turret
         """
-        ic("got", damage)
         self._hp -= damage
+
+        # check for turret death
+        if self._hp <= 0:
+            self.kill()
 
     def update(self, delta):
         # update weapon
@@ -144,8 +147,19 @@ class BaseTurret(VisibleEntity):
             Color.from_255(100, 100, 100)
         )
 
+        # draw engagement ragne
+        draw_dashed_circle(
+            self.world_position,
+            self.engagement_range,
+            64,
+            Color.white(),
+            3
+        )
+
 
 class SniperTurret(BaseTurret):
+    _max_hp: int = 40
+
     def __init__(self, position: Vec2) -> None:
         weapon = Sniper(self, True)
         weapon.reload(True)
@@ -159,7 +173,7 @@ class SniperTurret(BaseTurret):
 
 
 class AkTurret(BaseTurret):
-    _max_hp: int = 40
+    _max_hp: int = 60
 
     def __init__(self, position: Vec2) -> None:
         weapon = Ak47(self, False)
@@ -169,5 +183,5 @@ class AkTurret(BaseTurret):
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
-            1500
+            1200
         )

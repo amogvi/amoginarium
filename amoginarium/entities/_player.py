@@ -7,12 +7,14 @@ defines a player
 Author:
 Nilusink
 """
+from time import perf_counter
+
 from ..base._groups import GravityAffected, FrictionXAffected, HasBars
 from ..base._groups import CollisionDestroyed, WallCollider, Players
 from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
-from ._weapons import Minigun, Sniper
+from ._weapons import Minigun
 from ..logic import Vec2
 
 
@@ -29,6 +31,8 @@ class Player(LRImageEntity):
     _player_oob_left_1_texture: int = ...
     _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
+    _heal_per_second: float = 1.5
+    _time_to_heal: float = 10
     _max_hp: int = 80
     _hp: int = 0
 
@@ -126,6 +130,8 @@ class Player(LRImageEntity):
 
         self._n_hits = 0
 
+        self._last_hit = perf_counter()
+
     @property
     def max_hp(self) -> int:
         return self._max_hp
@@ -152,6 +158,9 @@ class Player(LRImageEntity):
         # check for player death
         if self._hp <= 0:
             self.kill()
+
+        # update last hit
+        self._last_hit = perf_counter()
 
     def update(self, delta):
         # update reloads
@@ -182,6 +191,11 @@ class Player(LRImageEntity):
             self.weapon.shoot(
                 shot_direction
             )
+
+        # heal
+        if self._hp < self._max_hp:
+            if perf_counter() - self._last_hit > self._time_to_heal:
+                self._hp += self._heal_per_second * delta
 
         # run update from parent classes
         super().update(delta)
