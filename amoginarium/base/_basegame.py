@@ -8,10 +8,10 @@ Author:
 Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
-from time import perf_counter, strftime
-from icecream import ic
-from contextlib import suppress
 from pygame.locals import DOUBLEBUF, OPENGL
+from time import perf_counter, strftime
+from contextlib import suppress
+from icecream import ic
 import pygame as pg
 import asyncio
 import json
@@ -27,8 +27,8 @@ from OpenGL.GLU import gluOrtho2D
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
-from ..entities import Player, Island, Bullet, SniperTurret
 from ._scrolling_background import ParalaxBackground
+from ..entities import Player, Island, Bullet
 from ..logic import SimpleLock, Color, Vec2
 from ..debugging import run_with_debug
 from ..communications import Server

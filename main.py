@@ -10,7 +10,7 @@ def main():
 
     # create initial controller
     KeyboardController()
-    AkTurret(
+    SniperTurret(
         Vec2.from_cartesian(1800, 500)
     )
 

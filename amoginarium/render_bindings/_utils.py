@@ -12,7 +12,7 @@ from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f
 from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT
 from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER
 from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA
-from OpenGL.GL import GL_UNSIGNED_BYTE, GL_POLYGON
+from OpenGL.GL import GL_UNSIGNED_BYTE, GL_POLYGON, GL_LINES
 from OpenGL.GL import glTranslate, glDisable, glEnd
 from OpenGL.GL import glMatrixMode, glLoadIdentity, glBegin, glTexCoord2f
 from OpenGL.GL import glVertex, glFlush
@@ -146,10 +146,9 @@ def draw_circle(
 
     glBegin(GL_POLYGON)
 
-    for i in range(100):
+    for i in range(num_segments):
         cosine = radius * np.cos(i*2*np.pi / num_segments)
         sine = radius * np.sin(i*2*np.pi / num_segments)
-        # ic(center.xy, cosine, sine)
         glVertex2f(cosine, sine)
 
     glEnd()
@@ -174,3 +173,64 @@ def draw_rect(
     glVertex2f(size.x, size.y)
     glVertex2f(0, size.y)
     glEnd()
+
+
+def draw_line(
+    start: Vec2,
+    end: Vec2,
+    color: Color | tColor,
+    global_position: bool = True
+) -> None:
+    """
+    draw a simple line
+    """
+    if global_position:
+        glLoadIdentity()  # reset previous glTranslate statements
+
+    set_color(color)
+
+    glBegin(GL_LINES)
+    glVertex2f(*start.xy)
+    glVertex2f(*end.xy)
+    glEnd()
+
+
+def draw_dashed_circle(
+    center: Vec2,
+    radius: float,
+    num_segments: int,
+    color: Color | tColor,
+    thickness: int = 1
+) -> None:
+    glLoadIdentity()
+    glTranslate(center.x, center.y, 0)
+
+    set_color(color)
+
+    for i in range(num_segments):
+        i1 = i * 2
+        i2 = i1 + 1
+
+        cosine1 = np.cos(i1*2*np.pi / num_segments)
+        sine1 = np.sin(i1*2*np.pi / num_segments)
+
+        cosine2 = np.cos(i2*2*np.pi / num_segments)
+        sine2 = np.sin(i2*2*np.pi / num_segments)
+
+        # draw_line(
+        #     Vec2.from_cartesian(cosine1, sine1),
+        #     Vec2.from_cartesian(cosine2, sine2),
+        #     color
+        # )
+
+        # glBegin(GL_LINES)
+        # glVertex2f(cosine1, sine1)
+        # glVertex2f(cosine2, sine2)
+        # glEnd()
+
+        glBegin(GL_POLYGON)
+        glVertex2f(cosine1 * radius, sine1 * radius)
+        glVertex2f(cosine1 * (radius + thickness), sine1 * (radius + thickness))
+        glVertex2f(cosine2 * (radius + thickness), sine2 * (radius + thickness))
+        glVertex2f(cosine2 * radius, sine2 * radius)
+        glEnd()

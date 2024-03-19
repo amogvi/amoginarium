@@ -186,6 +186,14 @@ class Color:
             m.ceil(a * 255) if a is not None else None
         )
 
+    @classmethod
+    def white(cls, alpha: int = None) -> tp.Self:
+        return cls.from_255(255, 255, 255, alpha)
+
+    @classmethod
+    def red(cls, alpha: int = None) -> tp.Self:
+        return cls.from_255(255, 0, 0, alpha)
+
     @property
     def rgb255(self) -> tuple[int, int, int]:
         return (
