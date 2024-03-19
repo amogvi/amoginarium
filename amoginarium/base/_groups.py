@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from contextlib import suppress
-# from icecream import ic
+from icecream import ic
 import pygame as pg
 import typing as tp
 import numpy as np
@@ -24,6 +24,24 @@ class _BaseGroup(pg.sprite.Group):
         """
         for sprite in self.sprites():
             sprite.gl_draw()
+
+    def get_entities_in_circle(
+        self,
+        center: Vec2,
+        radius: float
+    ) -> list[tuple[float, tp.Any]]:
+        """
+        get all entities inside of a circle, sorted by distance (closest first)
+        """
+        out = []
+
+        for sprite in self.sprites():
+            delta = sprite.position - center
+
+            if delta.length <= radius:
+                out.append((delta.length, sprite))
+
+        return sorted(out, key=lambda r: r[0])
 
 
 class _Bullets(_BaseGroup):
@@ -68,12 +86,18 @@ class _Walls(_BaseGroup):
 
 
 class _Players(_BaseGroup):
+    _spawn_point: Vec2
+
     @property
     def spawn_point(self) -> Vec2:
         """
         player spawn point
         """
-        return Vec2.from_cartesian(200, 100)
+        return Updated.world_position + self._spawn_point.copy()
+
+    @spawn_point.setter
+    def spawn_point(self, point: Vec2) -> None:
+        self._spawn_point = point
 
     def get_max_position(self) -> Vec2:
         max_pos = Vec2()
@@ -112,8 +136,9 @@ class _Players(_BaseGroup):
 
 class _WallCollider(_BaseGroup):
     """
-    requires:
-    on_wall: bool
+    requires::
+
+        on_wall: bool
     """
     def collides_with(self, sprite) -> None:
         collides = False
@@ -134,15 +159,20 @@ class _WallCollider(_BaseGroup):
 class _GravityAffected(_BaseGroup):
     """
     required methods / variables:
-    velocity: Vec2
-    position: Vec2
+
+        velocity: Vec2
+        position: Vec2
     """
+
+    @property
+    def gravity(self) -> float:
+        return 9.81 * 50
 
     def calculate_gravity(self, _delta: float) -> None:
         for sprite in self.sprites():
             sprite: tp.Any
 
-            sprite.acceleration.y = 9.81 * 50
+            sprite.acceleration.y = self.gravity
 
             with suppress(AttributeError):
                 if sprite.on_ground and sprite.velocity.y > 0:
@@ -164,9 +194,10 @@ class _FrictionXAffected(_BaseGroup):
 
 class _HasBars(_BaseGroup):
     """
-    required methods / variables:
-    hp: float
-    max_hp: float
+    required methods / variables::
+
+        hp: float
+        max_hp: float
     """
 
     def gl_draw(self) -> None:
@@ -195,7 +226,7 @@ class _HasBars(_BaseGroup):
                 )
 
                 # draw mag / reload bar
-                mag_n, mag_v = sprite.get_mag_state(1000)
+                mag_n, mag_v = sprite.weapon.get_mag_state(1000)
                 now_len = (mag_n / 1000) * max_len
                 draw_rect(
                     bar_start + Vec2.from_cartesian(0, 1.5 * bar_height),
@@ -211,9 +242,10 @@ class _HasBars(_BaseGroup):
 
 class _WallBouncer(_BaseGroup):
     """
-    required methods / variables:
-    velocity: Vec2
-    position: Vec2
+    required methods / variables::
+
+        velocity: Vec2
+        position: Vec2
     """
     def update(self) -> None:
         for sprite in self.sprites():
@@ -235,36 +267,70 @@ class _WallBouncer(_BaseGroup):
 
 class _CollisionDestroyed(_BaseGroup):
     """
-    required methods / variables
-    damage: float (optional, use if collision should damage the other object)
-    hp: float (optional, sprite should either have damage or hp (or both))
-    hit(damage: float) -> None
-    kill() -> None
+    required methods / variables::
+
+        damage: float # (optional, use if collision should damage the other object)
+        hp: float # (optional, sprite should either have damage or hp (or both))
+        hit(damage: float) -> None
+        kill() -> None
     """
     def update(self) -> None:
         calculated: list[set] = []
         for sprite in CollisionDestroyed.sprites():
+            calculated.append({sprite, sprite})
+            # ic(sprite.__class__.__name__, sprite.rect)
+
             with suppress(AttributeError):
                 for other in self.sprites():
                     sprite: tp.Any
                     other: tp.Any
-                    if all([
-                        # self.size_collide(sprite, other),
-                        pg.sprite.collide_rect(sprite, other),
-                        not (sprite.parent is other or other.parent is sprite),
-                        other.parent is not sprite.parent
-                    ]):
-                        if {sprite, other} not in calculated:
+
+                    if {sprite, other} not in calculated:
+                        # if sprite.__class__.__name__ == "SniperTurret" \
+                        #     or other.__class__.__name__ == "SniperTurret":
+                        # ic(sprite, other, pg.sprite.collide_rect(sprite, other))
+
+                        if all([
+                            # self.size_collide(sprite, other),
+                            pg.sprite.collide_rect(sprite, other),
+                            # not (
+                            #     sprite.parent is other
+                            #     or other.parent is sprite
+                            # ),
+                        ]):
+                            ic(
+                                sprite.__class__.__name__,
+                                other.__class__.__name__
+                            )
+                            # bullet is other
                             try:
                                 dmg = other.damage
 
                             except AttributeError:
                                 dmg = 0
 
-                            hp = sprite.hp
                             sprite.hit(dmg)
-                            if dmg != 0:
-                                other.hit_someone(target_hp=hp)
+                            # ic(dmg)
+
+                            with suppress(AttributeError):
+                                hp = other.hp
+                                if dmg != 0:
+                                    sprite.hit_someone(target_hp=hp)
+
+                            # bullet is sprite
+                            try:
+                                dmg = sprite.damage
+
+                            except AttributeError:
+                                dmg = 0
+
+                            other.hit(dmg)
+                            # ic(dmg)
+
+                            with suppress(AttributeError):
+                                hp = sprite.hp
+                                if dmg != 0:
+                                    other.hit_someone(target_hp=hp)
 
                     calculated.append({sprite, other})
 

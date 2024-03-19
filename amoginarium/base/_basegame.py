@@ -15,6 +15,7 @@ from pygame.locals import DOUBLEBUF, OPENGL
 import pygame as pg
 import asyncio
 import json
+import os
 
 from OpenGL.GL import glEnable, glClearColor, glBlendFunc
 from OpenGL.GL import glMatrixMode, glLoadIdentity
@@ -26,11 +27,11 @@ from OpenGL.GLU import gluOrtho2D
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
+from ..entities import Player, Island, Bullet, SniperTurret
 from ._scrolling_background import ParalaxBackground
-from ..entities import Player, Island, Bullet
+from ..logic import SimpleLock, Color, Vec2
 from ..debugging import run_with_debug
 from ..communications import Server
-from ..logic import SimpleLock
 # from ..render_bindings import render_text
 
 
@@ -42,6 +43,7 @@ def current_time() -> str:
 class BaseGame:
     running: bool = True
     _last_logic: float
+    _bg_color: tuple[float, float, float]
 
     def __init__(
             self,
@@ -124,34 +126,42 @@ class BaseGame:
                 )(getattr(self, func))
             )
 
-        Island.random_between(
-            100, 1800,
-            700, 900,
-            10, 1500,
-            10, 20
-        )
-
-
-        Island.random_between(
-            100, 1800,
-            700, 900,
-            10, 1500,
-            10, 20
-        )
-
-
-        Island.random_between(
-            100, 1800,
-            700, 900,
-            10, 1500,
-            10, 20
-        )
+        # load map
+        self.load_map("assets/maps/test.json")
 
         # load entity textures
         Player.load_textures()
         Bullet.load_textures()
 
         self._game_start = 0
+
+    def load_map(self, map_path: os.PathLike) -> None:
+        """
+        load a map from a json file
+        """
+        if not os.path.isfile(map_path):
+            # if the file wasn't found, try adding the root program path
+            map_path = os.path.dirname(__file__) + "/" + map_path
+            ic(map_path)
+            if not os.path.isfile(map_path):
+                raise FileNotFoundError(f"Couldn't find map \"{map_path}\"")
+
+        # load map data
+        data = json.load(open(map_path, "r"))
+
+        pg.display.set_caption(f"amoginarium - {data["name"]}")
+        self._bg_color = Color.to_1(*data["background"])
+        Players.spawn_point = Vec2.from_cartesian(*data["spawn_pos"])
+
+        # load islands
+        for island in data["platforms"]:
+            Island(
+                Vec2.from_cartesian(*island["pos"]),
+                Vec2.from_cartesian(*island["size"]),
+                island["texture"]
+            )
+
+        # load entities
 
     def time_since_start(self) -> str:
         """

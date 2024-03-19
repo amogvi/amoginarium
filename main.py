@@ -1,13 +1,18 @@
 #! venv/bin/python
 from amoginarium.controllers import KeyboardController
 from amoginarium.base import BaseGame
+from amoginarium.entities import SniperTurret
+from amoginarium.logic import Vec2
 
 
 def main():
     game = BaseGame(debug=True)
 
-    # create controller
+    # create initial controller
     KeyboardController()
+    SniperTurret(
+        Vec2.from_cartesian(1800, 500)
+    )
 
     game.mainloop()
 

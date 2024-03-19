@@ -8,5 +8,8 @@
             "size": [1920, 20],
             "texture": "path/to/texture.png"
         }
+    ],
+    "entities": [
+
     ]
 }

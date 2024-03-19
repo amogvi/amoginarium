@@ -4,7 +4,21 @@ import math
 data = json.load(open("debug.json", "r"))
 
 
-fpss = sorted([1 / value[1] for value in data["pygame"]])
+# filter out first second
+for n, (t_start, _) in enumerate(data["pygame"]):
+    if t_start > 1:
+        print("filtered first second")
+        fpss = data["pygame"][n:]
+        break
+
+else:
+    print("unfiltered")
+    fpss = data["pygame"]
+
+# convert from loop time to fps
+fpss = sorted([1 / value[1] for value in fpss])
+
+
 lo_1 = fpss[:math.ceil(len(fpss) * .01)]
 hi_1 = fpss[::-1][:math.ceil(len(fpss) * .01)]
 

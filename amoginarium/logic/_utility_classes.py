@@ -9,6 +9,7 @@ Nilusink, melektron
 """
 from time import perf_counter
 import typing as tp
+import math as m
 import asyncio
 import inspect
 
@@ -158,3 +159,108 @@ class WDTimer(_BaseTimer):
             return self
         self._timer_task.cancel()
         self._timer_task = None
+
+
+class Color:
+    r: int
+    g: int
+    b: int
+    a: int | None
+
+    def __init__(self, r: int, g: int, b: int, a: int = None) -> None:
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+
+    @classmethod
+    def from_255(cls, r: int, g: int, b: int, a: int = None) -> tp.Self:
+        return cls(r, g, b, a)
+
+    @classmethod
+    def from_1(cls, r: float, g: float, b: float, a: float = None) -> tp.Self:
+        return cls(
+            m.ceil(r * 255),
+            m.ceil(g * 255),
+            m.ceil(b * 255),
+            m.ceil(a * 255) if a is not None else None
+        )
+
+    @property
+    def rgb255(self) -> tuple[int, int, int]:
+        return (
+            int(self.r),
+            int(self.g),
+            int(self.b)
+        )
+
+    @property
+    def rgba255(self) -> tuple[int, int, int, int]:
+        if self.a is None:
+            raise ValueError("alpha value has not been set")
+
+        return (
+            int(self.r),
+            int(self.g),
+            int(self.b),
+            int(self.a)
+        )
+
+    @property
+    def rgb1(self) -> tuple[float, float, float]:
+        return self.to_1(self.r, self.g, self.b)
+
+    @property
+    def rgba1(self) -> tuple[float, float, float, float]:
+        if self.a is None:
+            raise ValueError("alpha value has not been set")
+
+        return self.to_1(self.r, self.g, self.b, self.a)
+
+    @property
+    def is_rgba(self) -> bool:
+        return self.a is not None
+
+    @staticmethod
+    def to_255(
+        r: float,
+        g: float,
+        b: float,
+        a: float = None
+    ) -> tuple[int, int, int] | tuple[int, int, int, int]:
+        # return rgb if alpha is not given
+        if a is None:
+            return (
+                int(r * 255),
+                int(g * 255),
+                int(b * 255)
+            )
+
+        # return rgba if alpha is provided
+        return (
+            int(r * 255),
+            int(g * 255),
+            int(b * 255),
+            int(a * 255)
+        )
+
+    @staticmethod
+    def to_1(
+        r: int,
+        g: int,
+        b: int,
+        a: int = None
+    ) -> tuple[float, float, float] | tuple[float, float, float, float]:
+        if a is None:
+            return (
+                r / 255,
+                g / 255,
+                b / 255
+            )
+
+        return (
+            r / 255,
+            g / 255,
+            b / 255,
+            a / 255
+        )
