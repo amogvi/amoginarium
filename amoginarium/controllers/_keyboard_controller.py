@@ -10,7 +10,6 @@ Nilusink
 from dataclasses import dataclass
 import pygame as pg
 
-
 from ._base_controller import Controller
 
 

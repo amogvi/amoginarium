@@ -12,6 +12,7 @@ from pygame.locals import DOUBLEBUF, OPENGL
 from time import perf_counter, strftime
 from contextlib import suppress
 from icecream import ic
+import typing as tp
 import pygame as pg
 import asyncio
 import json
@@ -35,6 +36,12 @@ from ..communications import Server
 # from ..render_bindings import render_text
 
 
+class BoundFunction(tp.TypedDict):
+    func: tp.Callable
+    args: tuple
+    kwargs: dict
+
+
 def current_time() -> str:
     ms = str(round(perf_counter(), 4)).split(".")[1]
     return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
@@ -44,6 +51,16 @@ class BaseGame:
     running: bool = True
     _last_logic: float
     _bg_color: tuple[float, float, float]
+    _instance: tp.Self = ...
+
+    def __new__(cls, *args, **kwargs) -> "BaseGame":
+        # only one instance can exist
+        if cls._instance is not ...:
+            return cls._instance
+
+        new = super(BaseGame, cls).__new__(cls)
+        cls._instance = new
+        return new
 
     def __init__(
             self,
@@ -79,6 +96,9 @@ class BaseGame:
             self._add_controller
         )
 
+        # other things
+        self._in_next_loop: list[BoundFunction] = []
+
         # server setup
         self._server = Server(("0.0.0.0", game_port))
 
@@ -89,6 +109,7 @@ class BaseGame:
         screen_info = pg.display.Info()
         window_size = (screen_info.current_w, screen_info.current_h)
 
+        Updated.screen_size = Vec2.from_cartesian(*window_size)
         self.screen = pg.display.set_mode(
             window_size,
             DOUBLEBUF | OPENGL | pg.RESIZABLE
@@ -135,7 +156,7 @@ class BaseGame:
 
         self._game_start = 0
 
-    def load_map(self, map_path: os.PathLike) -> None:
+    def load_map(self, map_path: tp.LiteralString) -> None:
         """
         load a map from a json file
         """
@@ -177,6 +198,18 @@ class BaseGame:
 
         t1, t2 = str(t_ms).split(".")
         return f"{t1: >4}.{t2: <4} |> "
+
+    def run_in_loop[**A, R](
+            self,
+            func: tp.Callable[A, R],
+            *args: A.args,
+            **kwargs: A.kwargs
+    ) -> None:
+        self._in_next_loop.append({
+            "func": func,
+            "args": args,
+            "kwargs": kwargs
+        })
 
     def _add_controller(self, controller: Controller) -> None:
         """
@@ -225,7 +258,6 @@ class BaseGame:
             self.middle_layer.fill((0, 0, 0, 0))
             self.top_layer.fill((0, 0, 0, 0))
 
-            # draw background
             min_player_pos, max_player_pos = Players.get_position_extremes()
 
             background_pos_right = self._background.position\
@@ -240,11 +272,18 @@ class BaseGame:
                 self._background.scroll(-delta * 5)
                 Updated.world_position.x = self._background.position
 
-            self._background.draw(self.lowest_layer)
+            # draw background
+            self._background.draw()
 
             # handle groups
             Drawn.gl_draw()
             HasBars.gl_draw()
+
+            # draw in_loop
+            for f in self._in_next_loop:
+                f["func"](*f["args"], **f["kwargs"])
+
+            self._in_next_loop.clear()
 
             # # show fps
             # fps_surf = self.font.render(
@@ -298,7 +337,7 @@ class BaseGame:
                 self._logic_fps = int(1 / delta)
                 last_fps_print = now
 
-            self._update_logic(delta)
+            self._update_logic(delta, now)
 
             last = now
 

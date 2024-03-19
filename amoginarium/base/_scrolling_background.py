@@ -77,12 +77,15 @@ class ParalaxBackground:
             #     self._directory + file
             # ).convert_alpha())
 
-            tid, size = load_texture(self._directory + file)
+            tid, _ = load_texture(
+                self._directory + file,
+                (screen_width, screen_height)
+            )
             self._textures.append(tid)
-            self._sizes.append(size)
+            self._sizes.append((screen_width, screen_height))
 
     @property
-    def position(self) -> None:
+    def position(self) -> float:
         """
         get the position of the top layer
         """
@@ -94,7 +97,7 @@ class ParalaxBackground:
         """
         self._position -= value
 
-    def draw(self, surface: pg.surface.Surface) -> None:
+    def draw(self) -> None:
         """
         draw background to surface
         """

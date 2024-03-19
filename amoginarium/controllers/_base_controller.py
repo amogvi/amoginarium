@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from icecream import ic
 import typing as tp
 
-
 from ..logic import Vec2
 
 
@@ -47,7 +46,7 @@ class _Controllers:
         """
         return cid in [c.id for c in self._controllers]
 
-    def get_by_id(self, cid: str) -> "Controller":
+    def get_by_id(self, cid: str) -> tp.Self | None:
         if not self.exists(cid):
             raise ValueError(f"No controller with id \"{cid}\" exists!")
 
@@ -105,7 +104,7 @@ Controllers = _Controllers()
 class Controller:
     _keys: controls
 
-    def __new__(cls, *args, **kwargs) -> tp.Self:
+    def __new__(cls, *args, **kwargs):
         if len(args) > 1:
             cid = args[0]
             if Controllers.exists(cid):
@@ -147,11 +146,11 @@ class Controller:
         return self._keys.joy_btn
 
     @property
-    def joy_x(self) -> bool:
+    def joy_x(self) -> float:
         return self._keys.joy_x
 
     @property
-    def joy_y(self) -> bool:
+    def joy_y(self) -> float:
         return self._keys.joy_y
 
     @property
@@ -163,14 +162,14 @@ class Controller:
         return self._keys.copy()
 
     # @classmethod  # making this a classmethod didn't work for some reason
+    @staticmethod
     def joy_curve(
-            self,
-            value: float,
-            x_deadzone: float = 0,
-            y_deadzone: float = 0,
-            x_saturation: float = 1,
-            y_saturation: float = 1,
-            curve: float = 0  # TODO: curve
+        value: float,
+        x_deadzone: float = 0,
+        y_deadzone: float = 0,
+        x_saturation: float = 1,
+        y_saturation: float = 1,
+        curve: float = 0  # TODO: curve
     ) -> float:
         """
         apply a specific curve for joystick values (rangin from -1 to 1)
@@ -244,7 +243,7 @@ class Controller:
         stop joystick vibration
         """
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__}, id=\"{self.id}\">"
 
     def __repr__(self) -> str:

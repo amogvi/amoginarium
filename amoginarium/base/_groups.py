@@ -12,7 +12,7 @@ import pygame as pg
 import typing as tp
 import numpy as np
 
-from ..logic import Vec2, is_related
+from ..logic import Vec2, is_related, Color
 from ..render_bindings import draw_rect
 
 
@@ -30,7 +30,7 @@ class _BaseGroup(pg.sprite.Group):
         radius: float
     ) -> list[tuple[float, tp.Any]]:
         """
-        get all entities inside of a circle, sorted by distance (closest first)
+        get all entities inside a circle, sorted by distance (closest first)
         """
         out = []
 
@@ -49,10 +49,11 @@ class _Bullets(_BaseGroup):
 
 class _Updated(_BaseGroup):
     world_position: Vec2
+    screen_size: Vec2
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args) -> None:
         self.world_position = Vec2()
-        super().__init__(*args, **kwargs)
+        super().__init__(*args)
 
     def out_of_bounds_x(self, sprite, margin: float = 0) -> bool:
         return any([
@@ -139,16 +140,21 @@ class _WallCollider(_BaseGroup):
 
         on_wall: bool
     """
-    def collides_with(self, sprite) -> None:
+    @staticmethod
+    def collides_with(sprite) -> bool:
         collides = False
         for wall in Walls.sprites():
             sprite: tp.Any
             wall: tp.Any
             if all([
-                wall.position.y - wall.size.y / 2 <= sprite.position.y + sprite.size.y / 2,
-                sprite.position.y + sprite.size.y / 2 <= wall.position.y + wall.size.y / 2,
-                wall.position.x - wall.size.x / 2 <= sprite.position.x + sprite.size.x / 4,
-                sprite.position.x - sprite.size.x / 4 <= wall.position.x + wall.size.x / 2
+                wall.position.y - wall.size.y / 2
+                <= sprite.position.y + sprite.size.y / 2,
+                sprite.position.y + sprite.size.y / 2
+                <= wall.position.y + wall.size.y / 2,
+                wall.position.x - wall.size.x / 2
+                <= sprite.position.x + sprite.size.x / 4,
+                sprite.position.x - sprite.size.x / 4
+                <= wall.position.x + wall.size.x / 2
             ]):
                 collides = True
 
@@ -221,7 +227,11 @@ class _HasBars(_BaseGroup):
                 draw_rect(
                     bar_start,
                     Vec2.from_cartesian(now_len, bar_height),
-                    (0, 1, 0, 1)
+                    Color.fade(
+                        Color.from_255(255, 0, 0),
+                        Color.from_255(0, 255, 0),
+                        now_len / max_len
+                    )
                 )
 
                 # draw mag / reload bar
@@ -268,7 +278,8 @@ class _CollisionDestroyed(_BaseGroup):
     """
     required methods / variables::
 
-        damage: float # (optional, use if collision should damage the other object)
+        damage: float #
+        (optional, use if collision should damage the other object)
         hp: float # (optional, sprite should either have damage or hp (or both))
         hit(damage: float) -> None
         kill() -> None
@@ -285,10 +296,6 @@ class _CollisionDestroyed(_BaseGroup):
                     other: tp.Any
 
                     if {sprite, other} not in calculated:
-                        # if sprite.__class__.__name__ == "SniperTurret" \
-                        #     or other.__class__.__name__ == "SniperTurret":
-                        # ic(sprite, other, pg.sprite.collide_rect(sprite, other))
-
                         if all([
                             # self.size_collide(sprite, other),
                             pg.sprite.collide_rect(sprite, other),
@@ -332,7 +339,7 @@ class _CollisionDestroyed(_BaseGroup):
         ).length <= collision_distance
 
     @staticmethod
-    def box_collide(sprite1, sprite2) -> tp.Iterator:
+    def box_collide(sprite1, sprite2) -> bool:
         sprite1_pos = sprite1.position
         sprite2_pos = sprite2.position
         sprite1_size = sprite1.size

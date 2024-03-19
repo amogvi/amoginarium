@@ -1,7 +1,7 @@
 #! venv/bin/python
 from amoginarium.controllers import KeyboardController
 from amoginarium.base import BaseGame
-from amoginarium.entities import SniperTurret, AkTurret
+from amoginarium.entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
 from amoginarium.logic import Vec2
 
 
@@ -10,7 +10,7 @@ def main():
 
     # create initial controller
     KeyboardController()
-    SniperTurret(
+    MortarTurret(
         Vec2.from_cartesian(1800, 500)
     )
 
