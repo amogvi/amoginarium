@@ -82,5 +82,5 @@ class GameController(Controller):
     def stop_rumble(self) -> None:
         self._joystick.stop_rumble()
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__}, name={self._joystick.get_name()}>"

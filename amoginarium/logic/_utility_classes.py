@@ -69,7 +69,8 @@ class SimpleLock:
 
 
 class _BaseTimer:
-    def _run_callback(self, cb: tp.Callable | None):
+    @staticmethod
+    def _run_callback(cb: tp.Union[tp.Callable, None]):
         if cb is not None:
             asyncio.create_task(cb())
 
@@ -88,9 +89,9 @@ class WDTimer(_BaseTimer):
         timeout: time to count down for in seconds
         """
         self._timeout: float = timeout
-        self._timer_task: asyncio.Task = None
-        self._on_timeout_cb: tp.Callable = None
-        self._on_restart_cb: tp.Callable = None
+        self._timer_task: asyncio.Task | None = None
+        self._on_timeout_cb: tp.Union[tp.Callable, None] = None
+        self._on_restart_cb: tp.Union[tp.Callable, None] = None
 
     def on_timeout(self, cb: tp.Callable):
         """
@@ -271,4 +272,17 @@ class Color:
             g / 255,
             b / 255,
             a / 255
+        )
+
+    @staticmethod
+    def fade(a: "Color", b: "Color", t: float) -> "Color":
+        """
+        smoothly fade between a and b
+        t: 0-1
+        """
+        return Color.from_255(
+            int(a.r + (b.r - a.r) * t),
+            int(a.g + (b.g - a.g) * t),
+            int(a.b + (b.b - a.b) * t),
+            int(a.a + (b.a - a.a) * t) if None not in (a.a, b.a) else None,
         )

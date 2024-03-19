@@ -9,12 +9,13 @@ Nilusink
 """
 from contextlib import suppress
 # from icecream import ic
+import typing as tp
 
-from ..base._groups import HasBars, CollisionDestroyed, Players, Updated
-from ..base._groups import GravityAffected
-from ..render_bindings import load_texture, draw_circle, draw_dashed_circle
+from ..base import HasBars, CollisionDestroyed, Players, Updated
+from ..base import GravityAffected
+from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar
+from ..render_bindings import draw_circle, draw_dashed_circle
 from ..logic import Vec2, calculate_launch_angle, Color
-from ._weapons import BaseWeapon, Sniper, Ak47
 from ._base_entity import VisibleEntity
 
 
@@ -27,8 +28,9 @@ class BaseTurret(VisibleEntity):
     _weapon_texture_path: str | None
     _max_hp: int = 80
     _hp: int = 0
+    _aim_type: tp.Literal["low", "high"] = "low"
 
-    def __new__(cls, *args, **kwargs) -> None:
+    def __new__(cls, *args, **kwargs):
         # only load texture once
         if cls._body_texture is ...:
             cls.load_textures()
@@ -38,15 +40,15 @@ class BaseTurret(VisibleEntity):
     @classmethod
     def load_textures(cls) -> None:
         return
-        cls._body_texture, _ = load_texture(
-            cls._body_texture_path,
-            (64, 64)
-        )
-        if cls._weapon_texture_path is not None:
-            cls._weapon_texture, _ = load_texture(
-                cls._weapon_texture_path,
-                (64, 64)
-            )
+        # cls._body_texture, _ = load_texture(
+        #     cls._body_texture_path,
+        #     (64, 64)
+        # )
+        # if cls._weapon_texture_path is not None:
+        #     cls._weapon_texture, _ = load_texture(
+        #         cls._weapon_texture_path,
+        #         (64, 64)
+        #     )
 
     def __init__(
         self,
@@ -116,7 +118,7 @@ class BaseTurret(VisibleEntity):
                     player_velocity,
                     self.weapon.bullet_speed,
                     4,
-                    "low",
+                    self._aim_type,
                     g=GravityAffected.gravity * 2
                 )
 
@@ -184,4 +186,35 @@ class AkTurret(BaseTurret):
             position,
             weapon,
             1200
+        )
+
+
+class MinigunTurret(BaseTurret):
+    _max_hp: int = 60
+
+    def __init__(self, position: Vec2) -> None:
+        weapon = Minigun(self, False)
+        weapon.reload(True)
+
+        super().__init__(
+            Vec2.from_cartesian(64, 64),
+            position,
+            weapon,
+            1400
+        )
+
+
+class MortarTurret(BaseTurret):
+    _max_hp: int = 80
+    _aim_type = "high"
+
+    def __init__(self, position: Vec2) -> None:
+        weapon = Mortar(self, False)
+        weapon.reload(True)
+
+        super().__init__(
+            Vec2.from_cartesian(64, 64),
+            position,
+            weapon,
+            1000
         )

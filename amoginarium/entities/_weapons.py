@@ -26,7 +26,7 @@ class Bullet(ImageEntity):
     _bullet_texture: int = ...
     _base_damage: float = 1
 
-    def __new__(cls, *args, **kwargs) -> None:
+    def __new__(cls, *args, **kwargs) -> "Bullet":
         # only load texture once
         if cls._bullet_texture is ...:
             cls.load_textures()
@@ -45,6 +45,8 @@ class Bullet(ImageEntity):
         base_damage: float = 1,
         casing: bool = False,
         time_to_life: float = 2,
+        explosion_radius: float = -1,
+        explosion_damage: float = 0,
         size: int = 10
     ) -> None:
         size = Vec2.from_cartesian(size, size)
@@ -53,6 +55,8 @@ class Bullet(ImageEntity):
         self._base_damage = base_damage
         self._ttl = time_to_life
         self._initial_velocity = initial_velocity
+        self._explosion_radius = explosion_radius
+        self._explosion_damage = explosion_damage
 
         texture_id = self._bullet_texture
 
@@ -131,8 +135,18 @@ class Bullet(ImageEntity):
             )
             return
 
-        self.remove(Drawn)
+        # explode
+        if self._explosion_radius > 0:
+            for d, entity in CollisionDestroyed.get_entities_in_circle(
+                self.position,
+                self._explosion_radius
+            ):
+                if entity != self:
+                    entity.hit(
+                        d / self._explosion_radius * self._explosion_damage
+                    )
 
+        self.remove(Drawn)
         super().kill()
 
     def gl_draw(self) -> None:
@@ -165,15 +179,17 @@ class BaseWeapon:
         recoil_time: float,
         recoil_factor: float,
         mag_size: int,
-        inacuracy: float,
+        inaccuracy: float,
         bullet_speed: float,
         bullet_size: int = 10,
         bullet_damage: float = 1,
+        bullet_explosion_radius: float = -1,
+        bullet_explosion_damage: float = 0,
         drop_casings: bool = False,
     ) -> None:
         self.parent = parent
         self._mag_size = mag_size
-        self._inacuracy = inacuracy
+        self._inacuracy = inaccuracy
         self._reload_time = reload_time
         self._recoil_time = recoil_time
         self._reload_time = reload_time
@@ -182,6 +198,8 @@ class BaseWeapon:
         self._recoil_factor = recoil_factor
         self._bullet_damage = bullet_damage
         self._bullet_size = bullet_size
+        self._bullet_explosion_radius = bullet_explosion_radius
+        self._bullet_explosion_damage = bullet_explosion_damage
 
     @property
     def mag_size(self) -> int:
@@ -195,7 +213,10 @@ class BaseWeapon:
     def bullet_speed(self) -> float:
         return self._bullet_speed
 
-    def get_mag_state(self, max_out: float) -> float:
+    def get_mag_state(
+        self,
+        max_out: float
+    ) -> tuple[float, int] | tuple[float, float]:
         """
         returns the current mag size (rising when reloading)
         :param max_out: output size
@@ -273,7 +294,9 @@ class BaseWeapon:
             + direction.normalize() * self.parent.size.length * .45,
             direction.normalize() * self._bullet_speed + self.parent.velocity,
             base_damage=self._bullet_damage,
-            size=self._bullet_size
+            size=self._bullet_size,
+            explosion_radius=self._bullet_explosion_radius,
+            explosion_damage=self._bullet_explosion_damage
         )
 
         if self._drop_casings:
@@ -304,8 +327,8 @@ class Minigun(BaseWeapon):
             recoil_time=.02,
             recoil_factor=2,
             mag_size=80,
-            inacuracy=.01093606,
-            bullet_speed=1300,
+            inaccuracy=.01093606,
+            bullet_speed=1600,
             bullet_damage=2,
             drop_casings=drop_casings
         )
@@ -319,7 +342,7 @@ class Ak47(BaseWeapon):
             recoil_time=.1,
             recoil_factor=1,
             mag_size=30,
-            inacuracy=0.03,
+            inaccuracy=0.03,
             bullet_size=11,
             bullet_speed=1200,
             bullet_damage=2.5,
@@ -335,9 +358,27 @@ class Sniper(BaseWeapon):
             recoil_time=2,
             recoil_factor=50,
             mag_size=6,
-            inacuracy=.00500002,
+            inaccuracy=.00500002,
             bullet_size=15,
             bullet_speed=2500,
             bullet_damage=10,
             drop_casings=drop_casings
+        )
+
+
+class Mortar(BaseWeapon):
+    def __init__(self, parent, drop_casings: bool = False) -> None:
+        super().__init__(
+            parent,
+            reload_time=5,
+            recoil_time=2,
+            recoil_factor=100,
+            mag_size=1,
+            inaccuracy=.00100002,
+            bullet_size=22,
+            bullet_speed=900,
+            bullet_damage=40,
+            drop_casings=drop_casings,
+            bullet_explosion_radius=100,
+            bullet_explosion_damage=50
         )

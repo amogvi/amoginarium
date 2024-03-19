@@ -8,9 +8,10 @@ Author:
 Nilusink
 """
 from time import perf_counter
+import typing as tp
 
-from ..base._groups import GravityAffected, FrictionXAffected, HasBars
-from ..base._groups import CollisionDestroyed, WallCollider, Players
+from ..base import GravityAffected, FrictionXAffected, HasBars
+from ..base import CollisionDestroyed, WallCollider, Players
 from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
@@ -38,7 +39,7 @@ class Player(LRImageEntity):
 
     on_wall: bool = False
 
-    def __new__(cls, *args, **kwargs) -> None:
+    def __new__(cls, *args, **kwargs):
         # only load texture once
         if cls._player_left_64_texture is ...:
             cls.load_textures()
@@ -146,7 +147,7 @@ class Player(LRImageEntity):
         return out or WallCollider.collides_with(self)
 
     @property
-    def parent(self) -> bool:
+    def parent(self) -> tp.Self:
         return self
 
     def hit(self, damage: float) -> None:
