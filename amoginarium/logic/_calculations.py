@@ -17,7 +17,8 @@ def calculate_launch_angle(
     target_velocity: Vec2,
     launch_speed: float,
     recalculate: int = 10,
-    aim_type: str = "low"
+    aim_type: str = "low",
+    g: float = 9.81
 ) -> Vec2:
     """
     :param position_delta: the position delta between cannon and target
@@ -31,9 +32,6 @@ def calculate_launch_angle(
         recalculate = 0
 
     aim_type = max if aim_type.lower() in ("high", "h") else min
-
-    # constants
-    g = 9.81
 
     # approximate where the target will be (this is not an exact method!!!)
     a_time = position_delta.length / launch_speed

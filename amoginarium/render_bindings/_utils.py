@@ -23,12 +23,36 @@ import typing as tp
 import numpy as np
 import os
 
-from ..logic import Vec2
+from ..logic import Vec2, Color
 
 
 type Color3 = tuple[float, float, float]
 type Color4 = tuple[float, float, float, float]
-type Color = Color3 | Color4
+type tColor = Color3 | Color4
+
+
+def set_color(color: Color | tColor) -> None:
+    """
+    set gColor
+    """
+    # color as Color class
+    if isinstance(color, Color):
+        if color.is_rgba:
+            glColor4f(*color.rgba1)
+
+        else:
+            glColor3f(*color.rgb1)
+
+    # color as tuple
+    else:
+        if len(color) == 3:
+            glColor3f(*color)
+
+        elif len(color) == 4:
+            glColor4f(*color)
+
+        else:
+            raise ValueError("Invalid color: ", color)
 
 
 def load_texture(
@@ -110,7 +134,7 @@ def draw_circle(
     center: Vec2,
     radius: float,
     num_segments: int,
-    color: Color
+    color: Color | tColor
 ) -> None:
     """
     draw a circle
@@ -118,14 +142,7 @@ def draw_circle(
     glLoadIdentity()  # reset previous glTranslate statements
     glTranslate(center.x, center.y, 0)
 
-    if len(color) == 3:
-        glColor3f(*color)
-
-    elif len(color) == 4:
-        glColor4f(*color)
-
-    else:
-        raise ValueError("Invalid color: ", color)
+    set_color(color)
 
     glBegin(GL_POLYGON)
 
@@ -141,7 +158,7 @@ def draw_circle(
 def draw_rect(
     start: Vec2,
     size: Vec2,
-    color: Color
+    color: Color | tColor
 ) -> None:
     """
     draw a rectangle
@@ -149,14 +166,7 @@ def draw_rect(
     glLoadIdentity()  # reset previous glTranslate statements
     glTranslate(start.x, start.y, 0)
 
-    if len(color) == 3:
-        glColor3f(*color)
-
-    elif len(color) == 4:
-        glColor4f(*color)
-
-    else:
-        raise ValueError("Invalid color: ", color)
+    set_color(color)
 
     glBegin(GL_POLYGON)
     glVertex2f(0, 0)

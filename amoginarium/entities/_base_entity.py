@@ -77,17 +77,25 @@ class Entity(pg.sprite.Sprite):
 
         self.update_rect()
 
-    def gl_draw(self) -> None:
-        raise NotImplementedError(
-            f"gl_draw wasn't implemented for \"{self.__class__.__name__}\""
-        )
-
 
 class VisibleEntity(Entity):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.add(Drawn)
+
+    def update_rect(self) -> None:
+        self.rect = pg.Rect(
+            self.position.x - self.size.x / 2,
+            self.position.y - self.size.y / 2,
+            self.size.x,
+            self.size.y
+        )
+
+    def gl_draw(self) -> None:
+        raise NotImplementedError(
+            f"gl_draw wasn't implemented for \"{self.__class__.__name__}\""
+        )
 
 
 class ImageEntity(VisibleEntity):
@@ -120,14 +128,6 @@ class LRImageEntity(VisibleEntity):
         # self.image = self._image_right.copy()
 
         super().__init__(*args, **kwargs)
-
-    def update_rect(self) -> None:
-        self.rect = pg.Rect(
-            self.position.x - self.size.x / 2,
-            self.position.y - self.size.y / 2,
-            self.size.x,
-            self.size.y
-        )
 
     def update(self, delta: float) -> None:
         # if self.facing.x > 0:

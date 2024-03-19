@@ -12,7 +12,7 @@ from ..base._groups import CollisionDestroyed, WallCollider, Players
 from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
-from ._weapons import Bullet
+from ._weapons import Minigun, Sniper
 from ..logic import Vec2
 
 
@@ -29,11 +29,6 @@ class Player(LRImageEntity):
     _player_oob_left_1_texture: int = ...
     _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
-    _current_reload_time: float = 0
-    _reload_time: float = 3
-    _recoil_factor: float = .7
-    _mag_size: int = 80
-    _mag_state: int = 0
     _max_hp: int = 80
     _hp: int = 0
 
@@ -87,7 +82,6 @@ class Player(LRImageEntity):
 
     ) -> None:
         self._hp = self._max_hp
-        self._mag_state = self._mag_size
 
         self._controller = controller
 
@@ -127,6 +121,9 @@ class Player(LRImageEntity):
             HasBars
         )
 
+        self.weapon = Minigun(self, False)
+        self.weapon.reload()
+
         self._n_hits = 0
 
     @property
@@ -146,26 +143,6 @@ class Player(LRImageEntity):
     def parent(self) -> bool:
         return self
 
-    def get_mag_state(self, max_out: float) -> float:
-        """
-        returns the current mag size (rising when reloading)
-        :param max_out: output size
-        :returns: x out of max_out, value of current state
-        """
-        if not self._current_reload_time:
-            return self._mag_state * (
-                max_out / self._mag_size
-            ), self._mag_state
-
-        return (
-            (
-                (
-                    self._reload_time-self._current_reload_time
-                ) / self._reload_time
-            ) * max_out,
-            round(self._current_reload_time, 2)
-        )
-
     def hit(self, damage: float) -> None:
         """
         deal damage to the player
@@ -178,12 +155,7 @@ class Player(LRImageEntity):
 
     def update(self, delta):
         # update reloads
-        if self._current_reload_time > 0:
-            self._current_reload_time -= delta
-
-        if self._current_reload_time < 0 and self._mag_state <= 0:
-            self._current_reload_time = 0
-            self._mag_state = self._mag_size
+        self.weapon.update(delta)
 
         # update controls
         self._controller.update(delta)
@@ -200,59 +172,19 @@ class Player(LRImageEntity):
             self.velocity.y = -400
 
         if self._controller.reload:
-            self._mag_state = 0
-            self._current_reload_time = self._reload_time
+            self.weapon.reload()
 
         # directional stuff
         if self._controller.shoot:
             # shoot a bit up
             shot_direction = self.facing.copy()
             shot_direction.y = -.4
-            self.shoot(
+            self.weapon.shoot(
                 shot_direction
             )
 
         # run update from parent classes
         super().update(delta)
-
-    def shoot(
-        self,
-        direction: Vec2
-    ) -> None:
-        """
-        shoot a bullet
-        """
-        # check if mag is empty
-        if self._mag_state <= 0:
-            if self._current_reload_time == 0:
-                self._current_reload_time = self._reload_time
-
-            return
-
-        # recoil
-        recoil = direction * self._movement_acceleration * self._recoil_factor
-        self.acceleration -= recoil
-
-        self._mag_state -= 1
-
-        # actual bullet
-        Bullet(
-            self,
-            self.position + Vec2.from_cartesian(0, 7)
-            + direction.normalize() * self.size.length * .45,
-            direction.normalize() * 1300 + self.velocity
-        )
-
-        # casing
-        casing_direction = direction.normalize()
-        casing_direction.x *= -.3
-        Bullet(
-            self,
-            self.position + Vec2.from_cartesian(0, 7)
-            + casing_direction * self.size.length * .4,
-            casing_direction * 500 + self.velocity,
-            casing=True
-        )
 
     def gl_draw(self) -> None:
         # check if out of bounds
