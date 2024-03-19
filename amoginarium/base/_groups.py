@@ -8,12 +8,11 @@ Author:
 Nilusink
 """
 from contextlib import suppress
-from icecream import ic
 import pygame as pg
 import typing as tp
 import numpy as np
 
-from ..logic import Vec2
+from ..logic import Vec2, is_related
 from ..render_bindings import draw_rect
 
 
@@ -293,16 +292,8 @@ class _CollisionDestroyed(_BaseGroup):
                         if all([
                             # self.size_collide(sprite, other),
                             pg.sprite.collide_rect(sprite, other),
-                            # not (
-                            #     sprite.parent is other
-                            #     or other.parent is sprite
-                            # ),
+                            not is_related(sprite, other)
                         ]):
-                            ic(
-                                sprite.__class__.__name__,
-                                other.__class__.__name__
-                            )
-                            # bullet is other
                             try:
                                 dmg = other.damage
 
@@ -310,7 +301,6 @@ class _CollisionDestroyed(_BaseGroup):
                                 dmg = 0
 
                             sprite.hit(dmg)
-                            # ic(dmg)
 
                             with suppress(AttributeError):
                                 hp = other.hp
@@ -325,7 +315,6 @@ class _CollisionDestroyed(_BaseGroup):
                                 dmg = 0
 
                             other.hit(dmg)
-                            # ic(dmg)
 
                             with suppress(AttributeError):
                                 hp = sprite.hp

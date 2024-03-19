@@ -14,7 +14,7 @@ from ..base._groups import HasBars, CollisionDestroyed, Players, Updated
 from ..base._groups import GravityAffected
 from ..render_bindings import load_texture, draw_circle
 from ..logic import Vec2, calculate_launch_angle, Color
-from ._weapons import BaseWeapon, Sniper
+from ._weapons import BaseWeapon, Sniper, Ak47
 from ._base_entity import VisibleEntity
 
 
@@ -140,16 +140,34 @@ class BaseTurret(VisibleEntity):
         draw_circle(
             self.world_position,
             self.size.length / 2,
-            8,
+            16,
             Color.from_255(100, 100, 100)
         )
 
 
 class SniperTurret(BaseTurret):
     def __init__(self, position: Vec2) -> None:
+        weapon = Sniper(self, True)
+        weapon.reload(True)
+
         super().__init__(
             Vec2.from_cartesian(64, 64),
             position,
-            Sniper(self, False),
-            1900
+            weapon,
+            2000
+        )
+
+
+class AkTurret(BaseTurret):
+    _max_hp: int = 40
+
+    def __init__(self, position: Vec2) -> None:
+        weapon = Ak47(self, False)
+        weapon.reload(True)
+
+        super().__init__(
+            Vec2.from_cartesian(64, 64),
+            position,
+            weapon,
+            1500
         )
