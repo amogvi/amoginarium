@@ -19,14 +19,14 @@ def calculate_launch_angle(
     recalculate: int = 10,
     aim_type: str = "low",
     g: float = 9.81
-) -> Vec2:
+) -> tuple[Vec2, float]:
     """
     :param position_delta: the position delta between cannon and target
     :param target_velocity: the current velocity of the target, pass empty Vec3 if no velocity is known
     :param launch_speed: the projectile muzzle speed
     :param recalculate: how often the position is being recalculated, basically a precision parameter
     :param aim_type: either "high" - "h" or "low" - "l". Defines if the lower or higher curve should be aimed for
-    :return: where to aim
+    :return: where to aim, tof
     """
     if recalculate < 0:
         recalculate = 0
@@ -66,4 +66,4 @@ def calculate_launch_angle(
         a_time = x / v_x
         a_pos = position_delta + target_velocity * a_time
 
-    return Vec2.from_polar(aim_type(solutions), 1)
+    return Vec2.from_polar(aim_type(solutions), 1), a_time

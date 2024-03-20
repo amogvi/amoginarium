@@ -9,7 +9,7 @@ Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
 from pygame.locals import DOUBLEBUF, OPENGL
-from time import perf_counter, strftime
+from time import perf_counter, strftime, sleep
 from contextlib import suppress
 from icecream import ic
 import typing as tp
@@ -28,14 +28,14 @@ from OpenGL.GLU import gluOrtho2D
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
+from ..entities import Player, Island, Bullet, BaseTurret
 from ._scrolling_background import ParalaxBackground
 from ._linked import in_next_loop, get_in_loop
-from ..entities import Player, Island, Bullet
 from ..logic import SimpleLock, Color, Vec2
+from ..render_bindings import draw_rect
 from ..debugging import run_with_debug
 from ..communications import Server
 from ..animations import explosion
-# from ..render_bindings import render_text
 
 
 class BoundFunction(tp.TypedDict):
@@ -132,11 +132,7 @@ class BaseGame:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         # initialize background
-        self._background = ParalaxBackground(
-            "assets/images/bg1",
-            *window_size,
-            parallax_multiplier=1.6
-        )
+        self._background = ...
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -152,12 +148,25 @@ class BaseGame:
         # load map
         self.load_map("assets/maps/test.json")
 
-        # load entity textures
-        Player.load_textures()
-        Bullet.load_textures()
-        explosion.load_textures(size=(256, 256))
+        self.preload()
 
         self._game_start = 0
+
+    @run_with_debug(reraise_errors=True, show_finish=True)
+    def preload(self) -> None:
+        """
+        load all textures n stuff
+        """
+        # load entity textures
+        self._background = ParalaxBackground(
+            "assets/images/bg1",
+            *Updated.screen_size.xy,
+            parallax_multiplier=1.6
+        )
+        Player.load_textures()
+        Bullet.load_textures()
+        BaseTurret.load_textures()
+        explosion.load_textures(size=(512, 512))
 
     def load_map(self, map_path: tp.LiteralString) -> None:
         """
@@ -233,7 +242,6 @@ class BaseGame:
         # draw background once
         while self.running:
             now = perf_counter()
-
             delta = now-last
 
             # only update fps every 200ms (for readability)
@@ -256,7 +264,7 @@ class BaseGame:
             self._update_logic(delta, now)
 
             # clear screen
-            glClearColor(*(0, 0, 0, 255))
+            glClearColor(0, 0, 0, 1)
             self.screen.fill((0, 0, 0, 0))
             self.middle_layer.fill((0, 0, 0, 0))
             self.top_layer.fill((0, 0, 0, 0))
@@ -268,11 +276,11 @@ class BaseGame:
             background_pos_left = self._background.position + 60
 
             if max_player_pos.x > background_pos_right:
-                self._background.scroll(delta * 5)
+                self._background.scroll(delta * 15)
                 Updated.world_position.x = self._background.position
 
             elif min_player_pos.x < background_pos_left:
-                self._background.scroll(-delta * 5)
+                self._background.scroll(-delta * 15)
                 Updated.world_position.x = self._background.position
 
             # draw background

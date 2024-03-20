@@ -18,17 +18,26 @@ from ..logic import Vec2
 
 
 def play_animation(
-    position: Vec2,
     sizes: tp.Iterable[Vec2],
     textures: tp.Iterable[int],
+    position: Vec2 = ...,
+    position_reference: object = ...,
     delay=.2
 ) -> None:
+    """
+    play an animation based on textures
+    """
 
-    # position.x -= size.x / 2
-    # position.y -= size.y / 2
+    if position is ... and position_reference is ...:
+        raise ValueError("position and position_reference weren't given")
 
     def inner():
         for size, texture in zip(sizes, textures):
+            if position_reference is not ...:
+                position = position_reference.world_position
+
+            position -= size / 2
+
             key = set_in_loop(
                 draw_textured_quad,
                 texture,
@@ -77,23 +86,27 @@ class ImageAnimation:
 
     def draw(
         self,
-        position: Vec2,
         delay=.2,
-        size: Vec2 = ...
+        size: Vec2 = ...,
+        position: Vec2 = ...,
+        position_reference: object = ...
     ) -> None:
         """
         play the recently loaded animation
+
+        either position or position_reference have to be given
         """
         if self._textures is ...:
             self.load_textures()
 
         play_animation(
-            position - self._sizes[0] / 2,
             self._sizes if size is ... else len(self._sizes) * [size],
             self._textures,
+            position,
+            position_reference,
             delay
         )
 
 
 # constant animations
-explosion = ImageAnimation("./assets/images/animations/explosion/")
+explosion = ImageAnimation("assets/images/animations/explosion/")

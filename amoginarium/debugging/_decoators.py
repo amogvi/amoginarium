@@ -18,6 +18,7 @@ from ._console_colors import CC, get_fg_color, terminal_link
 
 def run_with_debug(
     show_call: bool = True,
+    show_finish: bool = False,
     show_args: bool = False,
     on_fail: tp.Callable[[Exception], tp.Any] = ...,
     reraise_errors: bool = False
@@ -53,7 +54,17 @@ def run_with_debug(
 
             # execute function
             try:
-                return func(*args, **kwargs)
+                val = func(*args, **kwargs)
+
+                if ic.enabled and show_finish:
+                    print(
+                        f"{get_fg_color(36)}{prefix_time}"
+                        f"{get_fg_color(247)}{prefix_arrow}{CC.fg.GREEN}"
+                        f"finished {CC.fg.MAGENTA}{func_name}"
+                        f"{CC.ctrl.ENDC}"
+                    )
+
+                return val
 
             # log caught errors
             except Exception as e:

@@ -15,7 +15,7 @@ from ..base import CollisionDestroyed, WallCollider, Players
 from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
-from ._weapons import Minigun
+from ._weapons import Ak47 as Weapon
 from ..logic import Vec2
 
 
@@ -126,7 +126,7 @@ class Player(LRImageEntity):
             HasBars
         )
 
-        self.weapon = Minigun(self, False)
+        self.weapon = Weapon(self, False)
         self.weapon.reload()
 
         self._n_hits = 0
