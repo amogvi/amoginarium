@@ -25,7 +25,7 @@ def set_in_loop[**A, R](
     func: tp.Callable[A, R],
     *args: A.args,
     **kwargs: A.kwargs
-) -> None:
+) -> int:
     if len(_in_loop) > 0:
         new_key = max(_in_loop.keys()) + 1
 
