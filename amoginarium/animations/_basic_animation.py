@@ -58,7 +58,7 @@ class ImageAnimation:
     play an animation from a directory
     """
     _textures: list[int] = ...
-    _sizes: list[int] = ...
+    _sizes: list[Vec2] = ...
 
     def __init__(
         self,
@@ -72,7 +72,7 @@ class ImageAnimation:
         """
         images = [self._directory + "/" + file for file in os.listdir(
             self._directory
-        ) if file.endswith(".png")]
+        ) if file.endswith(filetype)]
 
         self._textures = []
         self._sizes = []
