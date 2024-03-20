@@ -10,12 +10,12 @@ def main():
 
     # create initial controller
     KeyboardController()
-    MortarTurret(
+    SniperTurret(
         Vec2.from_cartesian(1500, 100)
     )
-    SniperTurret(
-        Vec2.from_cartesian(2000, 900)
-    )
+    # SniperTurret(
+    #     Vec2.from_cartesian(2000, 900)
+    # )
     # AkTurret(
     #     Vec2.from_cartesian(1800, 300)
     # )
