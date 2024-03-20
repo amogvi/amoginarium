@@ -7,16 +7,14 @@ a few functions for rendering
 Author:
 Nilusink
 """
+from OpenGL.GL import glTranslate, glMatrixMode, glLoadIdentity, glTexCoord2f
 from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
-from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f
-from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT
-from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER
-from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA
-from OpenGL.GL import GL_UNSIGNED_BYTE, GL_POLYGON, GL_LINES
-from OpenGL.GL import glTranslate, glDisable, glEnd
-from OpenGL.GL import glMatrixMode, glLoadIdentity, glBegin, glTexCoord2f
-from OpenGL.GL import glVertex, glFlush
-from OpenGL.GL import GL_MODELVIEW, GL_QUADS
+from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f, glEnd
+from OpenGL.GL import glDisable, glBegin, glVertex, glFlush
+from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT, GL_LINES
+from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_POLYGON
+from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA, GL_QUADS
+from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW
 from icecream import ic
 from PIL import Image
 import typing as tp

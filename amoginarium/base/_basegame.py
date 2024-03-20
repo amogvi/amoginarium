@@ -9,7 +9,7 @@ Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
 from pygame.locals import DOUBLEBUF, OPENGL
-from time import perf_counter, strftime, sleep
+from time import perf_counter, strftime
 from contextlib import suppress
 from icecream import ic
 import typing as tp
@@ -20,8 +20,7 @@ import os
 
 from OpenGL.GL import glEnable, glClearColor, glBlendFunc
 from OpenGL.GL import glMatrixMode, glLoadIdentity
-from OpenGL.GL import GL_PROJECTION, GL_SRC_ALPHA
-from OpenGL.GL import GL_BLEND
+from OpenGL.GL import GL_PROJECTION, GL_SRC_ALPHA, GL_BLEND
 from OpenGL.GL import GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GLU import gluOrtho2D
 
@@ -32,7 +31,6 @@ from ..entities import Player, Island, Bullet, BaseTurret
 from ._scrolling_background import ParalaxBackground
 from ._linked import in_next_loop, get_in_loop
 from ..logic import SimpleLock, Color, Vec2
-from ..render_bindings import draw_rect
 from ..debugging import run_with_debug
 from ..communications import Server
 from ..animations import explosion
@@ -261,7 +259,7 @@ class BaseGame:
                         GameController(joy.get_guid(), joy)
 
             # update logic
-            self._update_logic(delta, now)
+            logic_time = self._update_logic(delta, now)
 
             # clear screen
             glClearColor(0, 0, 0, 1)
@@ -298,7 +296,8 @@ class BaseGame:
 
             # # show fps
             # fps_surf = self.font.render(
-            #     f"{self._pygame_fps} FPS (render)", False, (255, 255, 255, 255)
+            #     f"{self._pygame_fps} FPS (render)", False, (255, 255, 255,
+            # 255)
             # )
 
             # self.top_layer.blit(fps_surf, (0, 0))
@@ -320,7 +319,7 @@ class BaseGame:
             pg.display.flip()
 
             self._pygame_loop_times.append(
-                (now - self._game_start, delta)
+                (now - self._game_start, delta - logic_time)
             )
             last = now
 
@@ -354,7 +353,9 @@ class BaseGame:
 
         ic("logic end")
 
-    def _update_logic(self, delta, now) -> None:
+    def _update_logic(self, delta, now) -> float:
+        start = perf_counter()
+
         # check for new controllers
         if len(self._new_controllers) > 0:
             self._new_controllers_lock.aquire()
@@ -376,12 +377,15 @@ class BaseGame:
 
         CollisionDestroyed.update()
 
+        logic_time = perf_counter() - start
         self._logic_loop_times.append(
-            (now - self._game_start, delta)
+            (now - self._game_start, logic_time)
         )
         self._n_bullets_times.append(
-            (now - self._game_start, len(Bullets.sprites()), delta)
+            (now - self._game_start, len(Bullets.sprites()), logic_time)
         )
+
+        return logic_time
 
     def _run_comms(self) -> None:
         """
