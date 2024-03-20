@@ -219,6 +219,17 @@ class _HasBars(_BaseGroup):
                 bar_start.x -= sprite.size.x / 2
                 bar_start.y += sprite.size.y / 2 + 10
 
+                t = now_len / max_len
+                color = Color.fade(
+                    Color.from_255(255, 0, 0),
+                    Color.from_255(180, 90, 20),
+                    t * 2
+                ) if t < .5 else Color.fade(
+                    Color.from_255(180, 90, 20),
+                    Color.from_255(0, 255, 0),
+                    (t - .5) * 2
+                )
+
                 draw_rect(
                     bar_start,
                     Vec2.from_cartesian(max_len, bar_height),
@@ -227,11 +238,7 @@ class _HasBars(_BaseGroup):
                 draw_rect(
                     bar_start,
                     Vec2.from_cartesian(now_len, bar_height),
-                    Color.fade(
-                        Color.from_255(255, 0, 0),
-                        Color.from_255(0, 255, 0),
-                        now_len / max_len
-                    )
+                    color
                 )
 
                 # draw mag / reload bar

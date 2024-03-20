@@ -15,7 +15,7 @@ from ..base import CollisionDestroyed, WallCollider, Players
 from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
 from ..controllers import Controller
-from ._weapons import Ak47 as Weapon
+from ._weapons import Minigun as Weapon
 from ..logic import Vec2
 
 
