@@ -230,7 +230,7 @@ def draw_dashed_circle(
 
         glBegin(GL_POLYGON)
         glVertex2f(cosine1 * radius, sine1 * radius)
-        glVertex2f(cosine1 * (radius + thickness), sine1 * (radius + thickness))
-        glVertex2f(cosine2 * (radius + thickness), sine2 * (radius + thickness))
+        glVertex2f(cosine1 * (radius + thickness), sine1*(radius + thickness))
+        glVertex2f(cosine2 * (radius + thickness), sine2*(radius + thickness))
         glVertex2f(cosine2 * radius, sine2 * radius)
         glEnd()

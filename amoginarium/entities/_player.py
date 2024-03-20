@@ -150,7 +150,7 @@ class Player(LRImageEntity):
     def parent(self) -> tp.Self:
         return self
 
-    def hit(self, damage: float) -> None:
+    def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
         deal damage to the player
         """
@@ -158,7 +158,7 @@ class Player(LRImageEntity):
 
         # check for player death
         if self._hp <= 0:
-            self.kill()
+            self.kill(hit_by)
 
         # update last hit
         self._last_hit = perf_counter()
