@@ -10,6 +10,7 @@ Nilusink
 from OpenGL.GL import glRotated
 # from icecream import ic
 import pygame as pg
+import typing as tp
 import math as m
 
 
@@ -76,6 +77,9 @@ class Entity(pg.sprite.Sprite):
         self.last_angle = self.velocity.angle
 
         self.update_rect()
+
+    def kill(self, killed_by: tp.Self = ...) -> None:
+        super().kill()
 
 
 class VisibleEntity(Entity):

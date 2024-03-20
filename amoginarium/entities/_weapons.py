@@ -10,10 +10,12 @@ Nilusink
 from time import perf_counter
 from random import randint
 # from icecream import ic
+import typing as tp
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ..render_bindings import load_texture, draw_circle
 from ._base_entity import ImageEntity, Entity
+from ..animations import explosion
 from ..logic import Vec2, Color
 from ..base import WallCollider
 
@@ -100,8 +102,8 @@ class Bullet(ImageEntity):
     def parent(self) -> Entity:
         return self._parent
 
-    def hit(self, _damage: float) -> None:
-        self.kill()
+    def hit(self, _damage: float, hit_by: tp.Self = ...) -> None:
+        self.kill(killed_by=hit_by)
 
     def hit_someone(self, target_hp: float) -> None:
         self.kill()
@@ -122,7 +124,7 @@ class Bullet(ImageEntity):
 
         super().update(delta)
 
-    def kill(self) -> None:
+    def kill(self, killed_by: tp.Self = ...) -> None:
         if all([
             self._casing,
             not Updated.out_of_bounds_x(self)
@@ -141,10 +143,20 @@ class Bullet(ImageEntity):
                 self.position,
                 self._explosion_radius
             ):
-                if entity != self:
+                if entity != self and entity.__class__ is not killed_by.__class__:
                     entity.hit(
-                        d / self._explosion_radius * self._explosion_damage
+                        d / self._explosion_radius * self._explosion_damage,
+                        hit_by=self
                     )
+
+            explosion.draw(
+                self.position,
+                delay=.05,
+                size=Vec2.from_polar(
+                    self.size.angle,
+                    self._explosion_radius * 2
+                )
+            )
 
         self.remove(Drawn)
         super().kill()
@@ -370,8 +382,8 @@ class Mortar(BaseWeapon):
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
-            reload_time=5,
-            recoil_time=2,
+            reload_time=.08,
+            recoil_time=0,
             recoil_factor=100,
             mag_size=1,
             inaccuracy=.00100002,
@@ -379,6 +391,6 @@ class Mortar(BaseWeapon):
             bullet_speed=900,
             bullet_damage=40,
             drop_casings=drop_casings,
-            bullet_explosion_radius=100,
+            bullet_explosion_radius=200,
             bullet_explosion_damage=50
         )

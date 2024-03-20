@@ -29,10 +29,12 @@ from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
 from ._scrolling_background import ParalaxBackground
+from ._linked import in_next_loop, get_in_loop
 from ..entities import Player, Island, Bullet
 from ..logic import SimpleLock, Color, Vec2
 from ..debugging import run_with_debug
 from ..communications import Server
+from ..animations import explosion
 # from ..render_bindings import render_text
 
 
@@ -97,7 +99,7 @@ class BaseGame:
         )
 
         # other things
-        self._in_next_loop: list[BoundFunction] = []
+        # self._in_next_loop: list[BoundFunction] = []
 
         # server setup
         self._server = Server(("0.0.0.0", game_port))
@@ -153,6 +155,7 @@ class BaseGame:
         # load entity textures
         Player.load_textures()
         Bullet.load_textures()
+        explosion.load_textures(size=(256, 256))
 
         self._game_start = 0
 
@@ -199,13 +202,13 @@ class BaseGame:
         t1, t2 = str(t_ms).split(".")
         return f"{t1: >4}.{t2: <4} |> "
 
-    def run_in_loop[**A, R](
+    def run_in_next_loop[**A, R](
             self,
             func: tp.Callable[A, R],
             *args: A.args,
             **kwargs: A.kwargs
     ) -> None:
-        self._in_next_loop.append({
+        in_next_loop.append({
             "func": func,
             "args": args,
             "kwargs": kwargs
@@ -280,10 +283,10 @@ class BaseGame:
             HasBars.gl_draw()
 
             # draw in_loop
-            for f in self._in_next_loop:
+            for f in [*in_next_loop, *get_in_loop()]:
                 f["func"](*f["args"], **f["kwargs"])
 
-            self._in_next_loop.clear()
+            in_next_loop.clear()
 
             # # show fps
             # fps_surf = self.font.render(

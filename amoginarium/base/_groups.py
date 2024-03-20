@@ -307,7 +307,7 @@ class _CollisionDestroyed(_BaseGroup):
                             except AttributeError:
                                 dmg = 0
 
-                            sprite.hit(dmg)
+                            sprite.hit(dmg, other)
 
                             with suppress(AttributeError):
                                 hp = other.hp
@@ -321,7 +321,7 @@ class _CollisionDestroyed(_BaseGroup):
                             except AttributeError:
                                 dmg = 0
 
-                            other.hit(dmg)
+                            other.hit(dmg, sprite)
 
                             with suppress(AttributeError):
                                 hp = sprite.hp

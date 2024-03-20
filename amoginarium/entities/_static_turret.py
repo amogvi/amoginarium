@@ -77,7 +77,7 @@ class BaseTurret(VisibleEntity):
     def hp(self) -> int:
         return self._hp
 
-    def hit(self, damage: float) -> None:
+    def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
         deal damage to the turret
         """
@@ -85,7 +85,7 @@ class BaseTurret(VisibleEntity):
 
         # check for turret death
         if self._hp <= 0:
-            self.kill()
+            self.kill(hit_by)
 
     def update(self, delta):
         # update weapon
