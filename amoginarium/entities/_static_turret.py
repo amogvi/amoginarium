@@ -13,9 +13,9 @@ import typing as tp
 
 from ..base import HasBars, CollisionDestroyed, Players, Updated
 from ..base import GravityAffected
-from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar
-from ..render_bindings import draw_circle, draw_dashed_circle
-from ..logic import Vec2, calculate_launch_angle, Color
+from ..render_bindings import draw_textured_quad, draw_dashed_circle, load_texture
+from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar, Flak
+from ..logic import Vec2, calculate_launch_angle, Color, is_related
 from ._base_entity import VisibleEntity
 
 
@@ -24,6 +24,7 @@ class BaseTurret(VisibleEntity):
     weapon: BaseWeapon
     _body_texture: int = ...
     _body_texture_path: str
+    _body_texture_path: str = "assets/images/static_turret_base.png"
     _weapon_texture: int | None = ...
     _weapon_texture_path: str | None
     _max_hp: int = 80
@@ -39,11 +40,10 @@ class BaseTurret(VisibleEntity):
 
     @classmethod
     def load_textures(cls) -> None:
-        return
-        # cls._body_texture, _ = load_texture(
-        #     cls._body_texture_path,
-        #     (64, 64)
-        # )
+        cls._body_texture, _ = load_texture(
+            cls._body_texture_path,
+            (64, 64)
+        )
         # if cls._weapon_texture_path is not None:
         #     cls._weapon_texture, _ = load_texture(
         #         cls._weapon_texture_path,
@@ -55,10 +55,14 @@ class BaseTurret(VisibleEntity):
         size: Vec2,
         position: Vec2,
         weapon: BaseWeapon,
-        engagement_range: float
+        engagement_range: float,
+        airburst_munition: bool = False,
+        intercept_bullets: bool = False
     ) -> None:
         self.weapon = weapon
         self.engagement_range = engagement_range
+        self.airburst_munition = airburst_munition
+        self.intercept_bullets = intercept_bullets
 
         self._hp = self._max_hp
 
@@ -91,17 +95,22 @@ class BaseTurret(VisibleEntity):
         # update weapon
         self.weapon.update(delta)
 
-        # scan for players and engage the closest one
-        players = Players.get_entities_in_circle(
+        # scan for targets and engage the closest one
+        targets = (
+            CollisionDestroyed if self.intercept_bullets else Players
+        ).get_entities_in_circle(
             self.position,
             self.engagement_range
         )
 
-        if len(players) > 0:
-            _, closest_player = players[0]
-            player_velocity = closest_player.velocity.copy()
+        # filter stuff shot by myself
+        targets = [e for e in targets if not is_related(self, e[1])]
 
-            position_delta = closest_player.position - self.position
+        if len(targets) > 0:
+            _, closest_target = targets[0]
+            player_velocity = closest_target.velocity.copy()
+
+            position_delta = closest_target.position - self.position
             position_delta.y *= -1
             player_velocity.y *= -1
 
@@ -113,7 +122,7 @@ class BaseTurret(VisibleEntity):
 
             # try to predict where the player is going to be
             with suppress(ValueError):
-                aiming_angle = calculate_launch_angle(
+                aiming_angle, tof = calculate_launch_angle(
                     position_delta,
                     player_velocity,
                     self.weapon.bullet_speed,
@@ -127,7 +136,16 @@ class BaseTurret(VisibleEntity):
                 if mirror:
                     aiming_angle.x *= -1
 
-                self.weapon.shoot(aiming_angle)
+                # if airburst, explode at max engagement range
+                tof = min(
+                    tof,
+                    self.engagement_range / self.weapon.bullet_speed
+                )
+
+                self.weapon.shoot(
+                    aiming_angle,
+                    tof if self.airburst_munition else ...
+                )
 
         super().update(delta)
 
@@ -142,11 +160,16 @@ class BaseTurret(VisibleEntity):
             return
 
         # draw turret
-        draw_circle(
-            self.world_position,
-            self.size.length / 2,
-            16,
-            Color.from_255(100, 100, 100)
+        # draw_circle(
+        #     self.world_position,
+        #     self.size.length / 2,
+        #     16,
+        #     Color.from_255(100, 100, 100)
+        # )
+        draw_textured_quad(
+            self._body_texture,
+            *(self.world_position - self.size / 2).xy,
+            *self.size.xy
         )
 
         # draw engagement ragne
@@ -216,5 +239,23 @@ class MortarTurret(BaseTurret):
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
-            1000
+            1000,
+        )
+
+
+class FlakTurret(BaseTurret):
+    _max_hp: int = 80
+    _aim_type = "low"
+
+    def __init__(self, position: Vec2) -> None:
+        weapon = Flak(self, True)
+        weapon.reload(True)
+
+        super().__init__(
+            Vec2.from_cartesian(64, 64),
+            position,
+            weapon,
+            1550,
+            airburst_munition=True,
+            intercept_bullets=False
         )

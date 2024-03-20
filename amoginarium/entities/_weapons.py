@@ -9,9 +9,11 @@ Nilusink
 """
 from time import perf_counter
 from random import randint
-# from icecream import ic
 import typing as tp
+# from threading import Thread
+# import time
 
+from ..base._linked import set_in_loop, reset_in_loop
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ..render_bindings import load_texture, draw_circle
 from ._base_entity import ImageEntity, Entity
@@ -145,18 +147,31 @@ class Bullet(ImageEntity):
             ):
                 if entity != self and entity.__class__ is not killed_by.__class__:
                     entity.hit(
-                        d / self._explosion_radius * self._explosion_damage,
+                        (1 - d / self._explosion_radius) * self._explosion_damage,
                         hit_by=self
                     )
 
             explosion.draw(
-                self.position,
                 delay=.05,
-                size=Vec2.from_polar(
-                    self.size.angle,
+                size=Vec2.from_cartesian(
+                    self._explosion_radius * 2,
                     self._explosion_radius * 2
-                )
+                ),
+                position_reference=self
             )
+
+            # def tmp():
+            #     key = set_in_loop(
+            #         draw_circle,
+            #         self.world_position,
+            #         self._explosion_radius,
+            #         32,
+            #         Color.red(100)
+            #     )
+            #     time.sleep(.1)
+            #     reset_in_loop(key)
+
+            # Thread(target=tmp).start()
 
         self.remove(Drawn)
         super().kill()
@@ -166,7 +181,7 @@ class Bullet(ImageEntity):
             draw_circle(
                 self.world_position,
                 self.size.x * .4,
-                5,
+                8,
                 Color.from_255(255, 255, 60)
             )
             return
@@ -198,6 +213,7 @@ class BaseWeapon:
         bullet_explosion_radius: float = -1,
         bullet_explosion_damage: float = 0,
         drop_casings: bool = False,
+        bullet_lifetime=2,
     ) -> None:
         self.parent = parent
         self._mag_size = mag_size
@@ -212,6 +228,7 @@ class BaseWeapon:
         self._bullet_size = bullet_size
         self._bullet_explosion_radius = bullet_explosion_radius
         self._bullet_explosion_damage = bullet_explosion_damage
+        self._bullet_lifetime = bullet_lifetime
 
     @property
     def mag_size(self) -> int:
@@ -269,7 +286,8 @@ class BaseWeapon:
 
     def shoot(
         self,
-        direction: Vec2
+        direction: Vec2,
+        bullet_tof: float = ...
     ) -> None:
         """
         shoot a bullet and check for recoil and reload
@@ -300,6 +318,12 @@ class BaseWeapon:
         self._mag_state -= 1
 
         # actual bullet
+        if bullet_tof is ...:
+            bullet_lifetime = self._bullet_lifetime
+
+        else:
+            bullet_lifetime = bullet_tof
+
         Bullet(
             self.parent,
             self.parent.position + Vec2.from_cartesian(0, 7)
@@ -308,7 +332,8 @@ class BaseWeapon:
             base_damage=self._bullet_damage,
             size=self._bullet_size,
             explosion_radius=self._bullet_explosion_radius,
-            explosion_damage=self._bullet_explosion_damage
+            explosion_damage=self._bullet_explosion_damage,
+            time_to_life=bullet_lifetime
         )
 
         if self._drop_casings:
@@ -352,7 +377,7 @@ class Ak47(BaseWeapon):
             parent,
             reload_time=2.5,
             recoil_time=.1,
-            recoil_factor=1,
+            recoil_factor=8,
             mag_size=30,
             inaccuracy=0.03,
             bullet_size=11,
@@ -382,15 +407,35 @@ class Mortar(BaseWeapon):
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
-            reload_time=.08,
+            reload_time=4,
             recoil_time=0,
             recoil_factor=100,
             mag_size=1,
             inaccuracy=.00100002,
             bullet_size=22,
-            bullet_speed=900,
+            bullet_speed=1050,
             bullet_damage=40,
             drop_casings=drop_casings,
             bullet_explosion_radius=200,
-            bullet_explosion_damage=50
+            bullet_explosion_damage=50,
+            bullet_lifetime=7,
+        )
+
+
+class Flak(BaseWeapon):
+    def __init__(self, parent, drop_casings: bool = False) -> None:
+        super().__init__(
+            parent,
+            reload_time=3,
+            recoil_time=.15,
+            recoil_factor=80,
+            mag_size=4,
+            inaccuracy=.0100002,
+            bullet_size=18,
+            bullet_speed=1400,
+            bullet_damage=30,
+            drop_casings=drop_casings,
+            bullet_explosion_radius=100,
+            bullet_explosion_damage=40,
+            bullet_lifetime=5,
         )

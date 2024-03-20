@@ -188,6 +188,10 @@ class Color:
         )
 
     @classmethod
+    def black(cls, alpha: int = None) -> tp.Self:
+        return cls.from_255(0, 0, 0, alpha)
+
+    @classmethod
     def white(cls, alpha: int = None) -> tp.Self:
         return cls.from_255(255, 255, 255, alpha)
 

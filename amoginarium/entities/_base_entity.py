@@ -19,6 +19,9 @@ from ..base import Updated, Drawn
 from ..logic import Vec2
 
 
+_next_entity_id = 0
+
+
 class Entity(pg.sprite.Sprite):
     facing: Vec2
     position: Vec2
@@ -32,6 +35,12 @@ class Entity(pg.sprite.Sprite):
         initial_position: Vec2 = ...,
         initial_velocity: Vec2 = ...
     ) -> None:
+        global _next_entity_id
+
+        # assign unique id
+        self.__id = _next_entity_id
+        _next_entity_id += 1
+
         self.size = Vec2.from_cartesian(1, 1) if size is ... else size
         self.facing = Vec2.from_cartesian(1, 0) if facing is ... else facing
         self.position = Vec2() if initial_position is ... else initial_position
@@ -42,6 +51,13 @@ class Entity(pg.sprite.Sprite):
 
         self.update_rect()
         self.add(Updated)
+
+    @property
+    def id(self) -> int:
+        """
+        unique entity id (simplifies comparison)
+        """
+        return self.__id
 
     @property
     def position_center(self) -> Vec2:

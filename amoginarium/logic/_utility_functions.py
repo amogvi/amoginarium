@@ -23,11 +23,11 @@ def is_parent(parent: object, child: object) -> bool:
     if not hasattr(child, "parent"):
         return False
 
-    return parent == child.parent
+    return parent.id == child.parent.id
 
 
 def is_related(a: object, b: object) -> bool:
     """
-    check if either is parent or child
+    check if either is parent or child or self
     """
-    return is_parent(a, b) or is_parent(b, a)
+    return is_parent(a, b) or is_parent(b, a) or a.id == b.id
