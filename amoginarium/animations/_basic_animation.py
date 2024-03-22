@@ -12,8 +12,8 @@ import typing as tp
 import time
 import os
 
-from ..render_bindings import draw_textured_quad, load_texture
-from ..base._linked import set_in_loop, reset_in_loop
+from ..render_bindings import renderer
+from ..base._linked import global_vars
 from ..logic import Vec2
 
 
@@ -38,17 +38,15 @@ def play_animation(
 
             position -= size / 2
 
-            key = set_in_loop(
-                draw_textured_quad,
+            key = global_vars.set_in_loop(
+                renderer.draw_textured_quad,
                 texture,
-                *position.xy,
-                *size.xy
+                position.xy,
+                size.xy
             )
-            # img = pg.image.load(directory+"/"+image)
-            # img = pg.transform.scale(img, (size.x, size.y))
-            # x = Game.blit(surface, img, position)
+
             time.sleep(delay)
-            reset_in_loop(key)
+            global_vars.reset_in_loop(key)
 
     Thread(target=inner).start()
 
@@ -77,7 +75,7 @@ class ImageAnimation:
         self._textures = []
         self._sizes = []
         for image in images:
-            texture, size = load_texture(
+            texture, size = renderer.load_texture(
                 image,
                 size
             )

@@ -29,11 +29,12 @@ from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..controllers import Controllers, Controller, GameController
 from ..entities import Player, Island, Bullet, BaseTurret
 from ._scrolling_background import ParalaxBackground
-from ._linked import in_next_loop, get_in_loop
 from ..logic import SimpleLock, Color, Vec2
 from ..debugging import run_with_debug
+# from ..render_bindings import renderer
 from ..communications import Server
 from ..animations import explosion
+from ._linked import global_vars
 
 
 class BoundFunction(tp.TypedDict):
@@ -109,7 +110,10 @@ class BaseGame:
         screen_info = pg.display.Info()
         window_size = (screen_info.current_w, screen_info.current_h)
 
-        Updated.screen_size = Vec2.from_cartesian(*window_size)
+        # set global screen size and ppm
+        global_vars.screen_size = Vec2.from_cartesian(*window_size)
+        global_vars.pixel_per_meter = window_size[0] / 1920
+
         self.screen = pg.display.set_mode(
             window_size,
             DOUBLEBUF | OPENGL | pg.RESIZABLE
@@ -158,7 +162,7 @@ class BaseGame:
         # load entity textures
         self._background = ParalaxBackground(
             "assets/images/bg1",
-            *Updated.screen_size.xy,
+            *global_vars.screen_size.xy,
             parallax_multiplier=1.6
         )
         Player.load_textures()
@@ -215,7 +219,7 @@ class BaseGame:
             *args: A.args,
             **kwargs: A.kwargs
     ) -> None:
-        in_next_loop.append({
+        global_vars.in_next_loop.append({
             "func": func,
             "args": args,
             "kwargs": kwargs
@@ -239,8 +243,15 @@ class BaseGame:
 
         # draw background once
         while self.running:
+            # total delta since last call
             now = perf_counter()
             delta = now-last
+
+            # update logic
+            logic_time = self._update_logic(delta, now)
+
+            # pygame loop time
+            start = perf_counter()
 
             # only update fps every 200ms (for readability)
             if now - last_fps_print > .2:
@@ -258,11 +269,9 @@ class BaseGame:
                         joy = pg.joystick.Joystick(event.device_index)
                         GameController(joy.get_guid(), joy)
 
-            # update logic
-            logic_time = self._update_logic(delta, now)
-
             # clear screen
             glClearColor(0, 0, 0, 1)
+            # renderer.draw_rect((0, 0), global_vars.screen_size, (0, 0, 0), False)
             self.screen.fill((0, 0, 0, 0))
             self.middle_layer.fill((0, 0, 0, 0))
             self.top_layer.fill((0, 0, 0, 0))
@@ -281,6 +290,8 @@ class BaseGame:
                 self._background.scroll(-delta * 15)
                 Updated.world_position.x = self._background.position
 
+            # global_vars.pixel_per_meter *= .9995
+
             # draw background
             self._background.draw()
 
@@ -289,10 +300,10 @@ class BaseGame:
             HasBars.gl_draw()
 
             # draw in_loop
-            for f in [*in_next_loop, *get_in_loop()]:
+            for f in [*global_vars.in_next_loop, *global_vars.get_in_loop()]:
                 f["func"](*f["args"], **f["kwargs"])
 
-            in_next_loop.clear()
+            global_vars.in_next_loop.clear()
 
             # # show fps
             # fps_surf = self.font.render(
@@ -319,7 +330,7 @@ class BaseGame:
             pg.display.flip()
 
             self._pygame_loop_times.append(
-                (now - self._game_start, delta - logic_time)
+                (now - self._game_start, perf_counter() - start)
             )
             last = now
 

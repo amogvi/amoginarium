@@ -13,7 +13,7 @@ import typing as tp
 import numpy as np
 
 from ..logic import Vec2, is_related, Color
-from ..render_bindings import draw_rect
+from ..render_bindings import renderer
 
 
 class _BaseGroup(pg.sprite.Group):
@@ -49,6 +49,7 @@ class _Bullets(_BaseGroup):
 
 class _Updated(_BaseGroup):
     world_position: Vec2
+    pixel_per_meter: Vec2
     screen_size: Vec2
 
     def __init__(self, *args) -> None:
@@ -230,12 +231,12 @@ class _HasBars(_BaseGroup):
                     (t - .5) * 2
                 )
 
-                draw_rect(
+                renderer.draw_rect(
                     bar_start,
                     Vec2.from_cartesian(max_len, bar_height),
                     (0, 0, 0, .5)
                 )
-                draw_rect(
+                renderer.draw_rect(
                     bar_start,
                     Vec2.from_cartesian(now_len, bar_height),
                     color
@@ -244,12 +245,12 @@ class _HasBars(_BaseGroup):
                 # draw mag / reload bar
                 mag_n, mag_v = sprite.weapon.get_mag_state(1000)
                 now_len = (mag_n / 1000) * max_len
-                draw_rect(
+                renderer.draw_rect(
                     bar_start + Vec2.from_cartesian(0, 1.5 * bar_height),
                     Vec2.from_cartesian(max_len if now_len else 0, bar_height),
                     (0, 0, 0, .5)
                 )
-                draw_rect(
+                renderer.draw_rect(
                     bar_start + Vec2.from_cartesian(0, 1.5 * bar_height),
                     Vec2.from_cartesian(now_len, bar_height),
                     (.55, .55, 1, 1)
@@ -287,7 +288,7 @@ class _CollisionDestroyed(_BaseGroup):
 
         damage: float #
         (optional, use if collision should damage the other object)
-        hp: float # (optional, sprite should either have damage or hp (or both))
+        hp: float # (optional, sprite should either have damage or hp)
         hit(damage: float) -> None
         kill() -> None
     """

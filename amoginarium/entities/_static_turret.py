@@ -13,10 +13,10 @@ import typing as tp
 
 from ..base import HasBars, CollisionDestroyed, Players, Updated
 from ..base import GravityAffected
-from ..render_bindings import draw_textured_quad, draw_dashed_circle, load_texture
 from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar, Flak
 from ..logic import Vec2, calculate_launch_angle, Color, is_related
 from ._base_entity import VisibleEntity
+from ..render_bindings import renderer
 
 
 class BaseTurret(VisibleEntity):
@@ -40,15 +40,11 @@ class BaseTurret(VisibleEntity):
 
     @classmethod
     def load_textures(cls) -> None:
-        cls._body_texture, _ = load_texture(
-            cls._body_texture_path,
-            (64, 64)
-        )
-        # if cls._weapon_texture_path is not None:
-        #     cls._weapon_texture, _ = load_texture(
-        #         cls._weapon_texture_path,
-        #         (64, 64)
-        #     )
+        if cls._body_texture is ...:
+            cls._body_texture, _ = renderer.load_texture(
+                cls._body_texture_path,
+                (64, 64)
+            )
 
     def __init__(
         self,
@@ -166,14 +162,14 @@ class BaseTurret(VisibleEntity):
         #     16,
         #     Color.from_255(100, 100, 100)
         # )
-        draw_textured_quad(
+        renderer.draw_textured_quad(
             self._body_texture,
-            *(self.world_position - self.size / 2).xy,
-            *self.size.xy
+            self.world_position - self.size / 2,
+            self.size.xy
         )
 
         # draw engagement ragne
-        draw_dashed_circle(
+        renderer.draw_dashed_circle(
             self.world_position,
             self.engagement_range,
             64,

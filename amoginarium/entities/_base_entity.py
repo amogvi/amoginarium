@@ -14,7 +14,7 @@ import typing as tp
 import math as m
 
 
-from ..render_bindings import draw_textured_quad
+from ..render_bindings import renderer
 from ..base import Updated, Drawn
 from ..logic import Vec2
 
@@ -131,12 +131,16 @@ class ImageEntity(VisibleEntity):
 
     def gl_draw(self) -> None:
         glRotated(-self.velocity.angle * (180 / m.pi), 0, 0, 1)
-        draw_textured_quad(
+        renderer.draw_textured_quad(
             self._texture_id,
-            self.rect.x - Updated.world_position.x,
-            self.rect.y - Updated.world_position.y,
-            self.size.x,
-            self.size.y
+            (
+                self.rect.x - Updated.world_position.x,
+                self.rect.y - Updated.world_position.y
+            ),
+            (
+                self.size.x,
+                self.size.y
+            )
         )
 
 
@@ -159,10 +163,14 @@ class LRImageEntity(VisibleEntity):
         super().update(delta)
 
     def gl_draw(self) -> None:
-        draw_textured_quad(
+        renderer.draw_textured_quad(
             self._texture_right if self.facing.x < 0 else self._texture_left,
-            self.rect.x - Updated.world_position.x,
-            self.rect.y - Updated.world_position.y,
-            self.size.x,
-            self.size.y
+            (
+                self.rect.x - Updated.world_position.x,
+                self.rect.y - Updated.world_position.y
+            ),
+            (
+                self.size.x,
+                self.size.y
+            )
         )
