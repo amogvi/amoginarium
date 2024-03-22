@@ -12,8 +12,8 @@ import typing as tp
 
 from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
-from ..render_bindings import load_texture, draw_textured_quad
 from ._base_entity import LRImageEntity
+from ..render_bindings import renderer
 from ..controllers import Controller
 from ._weapons import Minigun as Weapon
 from ..logic import Vec2
@@ -48,31 +48,31 @@ class Player(LRImageEntity):
 
     @classmethod
     def load_textures(cls) -> None:
-        cls._player_right_64_texture, _ = load_texture(
+        cls._player_right_64_texture, _ = renderer.load_texture(
             PLAYER_RIGHT_64_PATH,
             (128, 64)
         )
-        cls._player_left_64_texture, _ = load_texture(
+        cls._player_left_64_texture, _ = renderer.load_texture(
             PLAYER_RIGHT_64_PATH,
             (128, 64),
             mirror="x"
         )
 
-        cls._player_oob_right_1_texture, _ = load_texture(
+        cls._player_oob_right_1_texture, _ = renderer.load_texture(
             PLAYER_OOB_RIGHT_64_PATH,
             (64, 64),
             mirror="x"
         )
-        cls._player_oob_right_2_texture, _ = load_texture(
+        cls._player_oob_right_2_texture, _ = renderer.load_texture(
             PLAYER_OOB_LEFT_64_PATH,
             (64, 64),
             mirror="x"
         )
-        cls._player_oob_left_1_texture, _ = load_texture(
+        cls._player_oob_left_1_texture, _ = renderer.load_texture(
             PLAYER_OOB_RIGHT_64_PATH,
             (64, 64),
         )
-        cls._player_oob_left_2_texture, _ = load_texture(
+        cls._player_oob_left_2_texture, _ = renderer.load_texture(
             PLAYER_OOB_LEFT_64_PATH,
             (64, 64),
         )
@@ -99,11 +99,11 @@ class Player(LRImageEntity):
             self._texture_left = self._player_left_64_texture
 
         else:
-            self._texture_right, _ = load_texture(
+            self._texture_right, _ = renderer.load_texture(
                 PLAYER_RIGHT_64_PATH,
                 (size * 2, size)
             )
-            self._texture_left, _ = load_texture(
+            self._texture_left, _ = renderer.load_texture(
                 PLAYER_RIGHT_64_PATH,
                 (size * 2, size),
                 mirror="x"
@@ -208,16 +208,16 @@ class Player(LRImageEntity):
 
             # facing
             if self.facing.x > 0:
-                draw_textured_quad(
+                renderer.draw_textured_quad(
                     self._player_oob_left_2_texture,
-                    0, self.world_position.y,
-                    64, 64
+                    (0, self.world_position.y),
+                    (64, 64)
                 )
             else:
-                draw_textured_quad(
+                renderer.draw_textured_quad(
                     self._player_oob_left_1_texture,
-                    0, self.world_position.y,
-                    64, 64
+                    (0, self.world_position.y),
+                    (64, 64)
                 )
             return
 
@@ -226,16 +226,16 @@ class Player(LRImageEntity):
 
             # facing
             if self.facing.x > 0:
-                draw_textured_quad(
+                renderer.draw_textured_quad(
                     self._player_oob_right_1_texture,
-                    1920 - 64, self.world_position.y,
-                    64, 64
+                    (1920 - 64, self.world_position.y),
+                    (64, 64)
                 )
             else:
-                draw_textured_quad(
+                renderer.draw_textured_quad(
                     self._player_oob_right_2_texture,
-                    1920 - 64, self.world_position.y,
-                    64, 64
+                    (1920 - 64, self.world_position.y),
+                    (64, 64)
                 )
             return
 

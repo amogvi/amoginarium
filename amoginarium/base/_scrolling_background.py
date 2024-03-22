@@ -13,7 +13,7 @@ from icecream import ic
 import pygame as pg
 import os
 
-from ..render_bindings import load_texture, draw_textured_quad
+from ..render_bindings import renderer
 
 
 class ScrollingBackground:
@@ -24,11 +24,10 @@ class ScrollingBackground:
         screen_width: int,
         screen_height: int,
     ) -> None:
-        self._texture_id, self._texture_size = load_texture(background_file)
+        self._texture_id, self._texture_size = renderer.load_texture(
+            background_file
+        )
         ic(self._texture_id)
-        # self._bg_image = pg.image.load(background_file).convert()
-        # self._scroll_image = pg.image.load(scrolling_part_file).convert_alpha()
-        # self._image_size = self._scroll_image.get_size()
         self._position = 0
 
         self._screen_width = screen_width
@@ -44,14 +43,11 @@ class ScrollingBackground:
         """
         draw background to surface
         """
-        draw_textured_quad(self._texture_id, 0, 0, *self._texture_size)
-        # surface.blit(self._bg_image, (0, 0))
-
-        # for i in range(self._screen_width // self._image_size[0] + 1):
-        #     surface.blit(
-        #         self._scroll_image,
-        #         (self._position + self._image_size[0] * i, 0)
-        #     )
+        renderer.draw_textured_quad(
+            self._texture_id,
+            (0, 0),
+            self._texture_size
+        )
 
 
 class ParalaxBackground:
@@ -77,7 +73,7 @@ class ParalaxBackground:
             #     self._directory + file
             # ).convert_alpha())
 
-            tid, _ = load_texture(
+            tid, _ = renderer.load_texture(
                 self._directory + file,
                 (screen_width, screen_height)
             )
@@ -95,7 +91,8 @@ class ParalaxBackground:
         """
         scroll by `value` pixels (first layer)
         """
-        self._position -= value
+        if self._position-value <= 0:
+            self._position -= value
 
     def draw(self) -> None:
         """
@@ -103,27 +100,18 @@ class ParalaxBackground:
         """
         n_layers = len(self._textures)-1
         for layer in range(n_layers, -1, -1):
-            image_pos = self._position % self._screen_width
+            image_pos = self._position + 10 % self._screen_width
             image_pos *= self._multiplier**(n_layers-layer)
             image_pos = int(image_pos % self._screen_width)
             image_pos -= self._screen_width
 
-            draw_textured_quad(
+            renderer.draw_textured_quad(
                 self._textures[layer],
-                image_pos, 0,
-                *self._sizes[layer]
+                (image_pos, 0),
+                self._sizes[layer]
             )
-            draw_textured_quad(
+            renderer.draw_textured_quad(
                 self._textures[layer],
-                image_pos + self._screen_width, 0,
-                *self._sizes[layer]
+                (image_pos + self._screen_width, 0),
+                self._sizes[layer]
             )
-
-            # surface.blit(
-            #     self._images[layer],
-            #     (image_pos, 0),
-            # )
-            # surface.blit(
-            #     self._images[layer],
-            #     (image_pos + self._screen_width, 0),
-            # )

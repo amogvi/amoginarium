@@ -14,6 +14,7 @@ import inspect
 
 
 from ._console_colors import CC, get_fg_color, terminal_link
+from ._utils import get_caller_name
 
 
 def run_with_debug(
@@ -29,9 +30,6 @@ def run_with_debug(
     def decorator[**A, R](func: tp.Callable[A, R]):
         def wrapper(*args: A.args, **kwargs: A.kwargs) -> R:
             # get caller name
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-
             prefix = ic.prefix()
             prefix_time = prefix[:-3]
             prefix_arrow = prefix[-3:]
@@ -47,7 +45,7 @@ def run_with_debug(
                     f"{get_fg_color(247)}{prefix_arrow}{CC.fg.GREEN}"
                     f"running {CC.fg.MAGENTA}{func_name}"
                     f"{get_fg_color(36)}, called by {CC.fg.MAGENTA}"
-                    f"{calframe[1][3]}{get_fg_color(36)}" +
+                    f"{get_caller_name()}{get_fg_color(36)}" +
                     (f"with {args, kwargs}" if show_args else "") +
                     f"{CC.ctrl.ENDC}"
                 )

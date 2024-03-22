@@ -10,7 +10,7 @@ Nilusink
 import typing as tp
 import random
 
-from ..render_bindings import draw_rect
+from ..render_bindings import renderer
 from ..entities import VisibleEntity
 from ..base import Walls
 from ..logic import Vec2
@@ -57,7 +57,7 @@ class Island(VisibleEntity):
         return cls(start, size)
 
     def gl_draw(self) -> None:
-        draw_rect(
+        renderer.draw_rect(
             self.world_position - self.size / 2,
             self.size,
             (.6, .4, .2)

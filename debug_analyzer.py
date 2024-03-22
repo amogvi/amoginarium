@@ -28,11 +28,11 @@ for value in data["logic"][2:]:
     logic_ys.append(value[1] * 1000)
 
 
-comms_xs = []
-comms_ys = []
-for value in data["comms"]:
-    comms_xs.append(value[0])
-    comms_ys.append(value[1] * 1000)
+comms_xs = logic_xs
+comms_ys = [logic_ys[i] + pygame_ys[i] for i in range(len(logic_ys))]
+# for value in data["comms"]:
+#     comms_xs.append(value[0])
+#     comms_ys.append(value[1] * 1000)
 
 
 bullets_xs = []
@@ -81,7 +81,7 @@ ax2.grid()
 
 ax1.plot(pygame_xs, pygame_ys, label="pygame")
 ax1.plot(logic_xs, logic_ys, label="logic")
-ax1.plot(comms_xs, comms_ys, label="comms")
+ax1.plot(comms_xs, comms_ys, label="total")
 
 ax1.set_xlabel("time since start in s")
 ax1.set_ylabel("loop time in ms")

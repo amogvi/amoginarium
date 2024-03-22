@@ -13,10 +13,9 @@ import typing as tp
 # from threading import Thread
 # import time
 
-from ..base._linked import set_in_loop, reset_in_loop
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
-from ..render_bindings import load_texture, draw_circle
 from ._base_entity import ImageEntity, Entity
+from ..render_bindings import renderer
 from ..animations import explosion
 from ..logic import Vec2, Color
 from ..base import WallCollider
@@ -39,7 +38,7 @@ class Bullet(ImageEntity):
 
     @classmethod
     def load_textures(cls) -> None:
-        cls._bullet_texture, _ = load_texture(BULLET_PATH, (10, 10))
+        cls._bullet_texture, _ = renderer.load_texture(BULLET_PATH, (10, 10))
 
     def __init__(
         self,
@@ -160,25 +159,12 @@ class Bullet(ImageEntity):
                 position_reference=self
             )
 
-            # def tmp():
-            #     key = set_in_loop(
-            #         draw_circle,
-            #         self.world_position,
-            #         self._explosion_radius,
-            #         32,
-            #         Color.red(100)
-            #     )
-            #     time.sleep(.1)
-            #     reset_in_loop(key)
-
-            # Thread(target=tmp).start()
-
         self.remove(Drawn)
         super().kill()
 
     def gl_draw(self) -> None:
         if not self._casing:
-            draw_circle(
+            renderer.draw_circle(
                 self.world_position,
                 self.size.x * .4,
                 8,
