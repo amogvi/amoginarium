@@ -55,13 +55,20 @@ for n_bullet, loop_time in zip(n_bullets, bullets_ys):
     av_bullets_ys_tmp[n_bullet].append(loop_time)
 
 av_bullet_ys: list[float] = [None] * (max(n_bullets) + 1)
+av_bullet_xs = list(range(len(av_bullet_ys)))
 for n_bullet in range(len(av_bullets_ys_tmp)):
     times = av_bullets_ys_tmp[n_bullet]
+
+    if times is None:
+        av_bullet_xs[n_bullet] = None
+        continue
 
     if len(times) > 0:
         av = sum(times) / len(times)
         av_bullet_ys[n_bullet] = av
 
+av_bullet_xs = [value for value in av_bullet_xs if value is not None]
+av_bullet_ys = [value for value in av_bullet_ys if value is not None]
 
 ax1 = plt.subplot(2, 1, 1)
 ax2 = plt.subplot(2, 1, 2)
@@ -69,7 +76,7 @@ ax2 = plt.subplot(2, 1, 2)
 # per bullet
 ax2.scatter(n_bullets, bullets_ys, label="loop times")
 ax2.plot(
-    list(range(len(av_bullet_ys))),
+    av_bullet_xs,
     av_bullet_ys,
     label="average",
     color=red

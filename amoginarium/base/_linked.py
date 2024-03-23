@@ -30,8 +30,10 @@ class _GlobalVars:
     _world_position: Vec2 = ...
     pixel_per_meter: Vec2 = ...
     in_next_loop: list[BoundFunction] = []
-    max_fps: int = 60
     _in_loop: dict[int, BoundFunction] = {}
+
+    max_fps: int = 60
+    show_targets: bool = True
 
     def __new__(cls, *args, **kwargs) -> tp.Self:
         # only one instance may be created
