@@ -176,6 +176,41 @@ class _WallCollider(_BaseGroup):
 
         return collides
 
+    @staticmethod
+    def on_ground(
+            sprite,
+            alt_pos: coord_t = ...,
+            alt_size: coord_t = ...
+    ) -> bool:
+        collides = False
+
+        pos = sprite.position
+        size = sprite.size
+
+        if alt_pos is not ...:
+            pos = convert_coord(alt_pos, Vec2)
+
+        if alt_size is not ...:
+            size = convert_coord(alt_size, Vec2)
+
+        for wall in Walls.sprites():
+            sprite: tp.Any
+            wall: tp.Any
+
+            if all([
+                wall.position.y - wall.size.y / 2
+                <= pos.y + size.y / 2,
+                pos.y + size.y / 2
+                <= wall.position.y - (wall.size.y / 2 - 20),
+                wall.position.x - wall.size.x / 2
+                <= pos.x + size.x / 4,
+                pos.x - size.x / 4
+                <= wall.position.x + wall.size.x / 2
+            ]):
+                collides = True
+
+        return collides
+
 
 class _GravityAffected(_BaseGroup):
     """
@@ -195,13 +230,13 @@ class _GravityAffected(_BaseGroup):
 
             sprite.acceleration.y = self.gravity
 
-            with suppress(AttributeError):
-                if sprite.on_ground and sprite.velocity.y > 0:
-                    while sprite.on_ground:
-                        sprite.position.y -= 0.01
+            # with suppress(AttributeError):
+            #     if sprite.on_ground and sprite.velocity.y > 0:
+            #         while sprite.on_ground:
+            #             sprite.position.y -= 0.01
 
-                    sprite.position.y += 0.01
-                    sprite.velocity.y = 0
+            #         sprite.position.y += 0.01
+            #         sprite.velocity.y = 0
 
 
 class _FrictionXAffected(_BaseGroup):
