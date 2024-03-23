@@ -5,6 +5,7 @@ __pycache__/
 assets/images/textures/
 **/layers/
 **/_images/
+*.lprof
 
 # C extensions
 *.so

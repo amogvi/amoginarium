@@ -239,12 +239,15 @@ class _GravityAffected(_BaseGroup):
 
 
 class _FrictionXAffected(_BaseGroup):
+    @property
+    def friction(self) -> float:
+        return 60
+
     def calculate_friction(self, delta: float) -> None:
         for sprite in self.sprites():
             with suppress(AttributeError):
-                sprite.acceleration.x = 0
-                sprite: tp.Any
-                sprite.velocity.x *= 1 - (0.5 * delta)
+                sprite.acceleration.x = -sprite.velocity.x / 100
+                sprite.acceleration.x *= self.friction
 
 
 class _HasBars(_BaseGroup):

@@ -129,7 +129,7 @@ class Player(LRImageEntity):
         )
 
         self.weapon = Weapon(self, False)
-        self.weapon.reload()
+        self.weapon.reload(True)
 
         self._n_hits = 0
 
