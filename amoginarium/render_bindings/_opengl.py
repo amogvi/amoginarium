@@ -23,7 +23,6 @@ from icecream import ic
 from PIL import Image
 import pygame as pg
 import numpy as np
-import os
 
 from ..logic import Vec2, Color, convert_coord
 from ._base_renderer import BaseRenderer, tColor
@@ -93,32 +92,23 @@ class OpenGLRenderer(BaseRenderer):
 
     @staticmethod
     def load_texture(
-            filename,
+            image,
             size,
             mirror=""
     ) -> tuple[TextureID, tuple[int, int]]:
-        # check if file exists
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(f"failed to load texture \"{filename}\"")
-
         # for debugging
-        loading_texture = f"{filename}, mirror: \"{mirror}\""
-        ic(loading_texture)
-
-        im = Image.open(filename)
-
         if size is not None:
-            im = im.resize(convert_coord(size))
+            image = image.resize(convert_coord(size))
 
         if "x" in mirror:
-            im = im.transpose(Image.FLIP_LEFT_RIGHT)
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
         # Flip the image vertically (since OpenGL's origin is at bottom-left)
         if "y" not in mirror:
-            im = im.transpose(Image.FLIP_TOP_BOTTOM)
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
-        width, height = im.size[0], im.size[1]
-        img_data = im.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
+        width, height = image.size[0], image.size[1]
+        img_data = image.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
 
         texture_id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, texture_id)

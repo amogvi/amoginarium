@@ -10,8 +10,8 @@ Nilusink
 from threading import Thread
 import typing as tp
 import time
-import os
 
+from ..base._textures import textures
 from ..render_bindings import renderer
 from ..base._linked import global_vars
 from ..logic import Vec2
@@ -58,27 +58,16 @@ class ImageAnimation:
     _textures: list[int] = ...
     _sizes: list[Vec2] = ...
 
-    def __init__(
-        self,
-        directory: tp.LiteralString,
-    ) -> None:
-        self._directory = directory
+    def __init__(self, animation_scope: str,) -> None:
+        self._scope = animation_scope
 
-    def load_textures(self, filetype: str = ".png", size: Vec2 = None) -> None:
+    def load_textures(self, size: Vec2 = None) -> None:
         """
         load all textures required for the animation
         """
-        images = [self._directory + "/" + file for file in os.listdir(
-            self._directory
-        ) if file.endswith(filetype)]
-
         self._textures = []
         self._sizes = []
-        for image in images:
-            texture, size = renderer.load_texture(
-                image,
-                size
-            )
+        for texture, size in textures.get_all_from_scope(self._scope):
             self._textures.append(texture)
             self._sizes.append(Vec2.from_cartesian(*size))
 
@@ -107,4 +96,4 @@ class ImageAnimation:
 
 
 # constant animations
-explosion = ImageAnimation("assets/images/animations/explosion/")
+explosion = ImageAnimation("explosion")

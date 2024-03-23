@@ -11,9 +11,9 @@ Nilusink
 from icecream import ic
 
 import pygame as pg
-import os
 
 from ..render_bindings import renderer
+from ..base._textures import textures
 
 
 class ScrollingBackground:
@@ -24,7 +24,7 @@ class ScrollingBackground:
         screen_width: int,
         screen_height: int,
     ) -> None:
-        self._texture_id, self._texture_size = renderer.load_texture(
+        self._texture_id, self._texture_size = textures.get_texture(
             background_file
         )
         ic(self._texture_id)
@@ -53,13 +53,13 @@ class ScrollingBackground:
 class ParalaxBackground:
     def __init__(
         self,
-        directory: str,
+        background_scope: str,
         screen_width: int,
         screen_height: int,
         parallax_multiplier: float = 1.2,
         load: bool = False
     ) -> None:
-        self._directory = directory + "/layers/"
+        self._scope = background_scope
         self._multiplier = parallax_multiplier
         self._position = 0
 
@@ -76,12 +76,10 @@ class ParalaxBackground:
         """
         load all textures
         """
-        for file in sorted(os.listdir(self._directory)):
-            tid, _ = renderer.load_texture(
-                self._directory + file,
-                (self._screen_width, self._screen_height)
-            )
-            self._textures.append(tid)
+        for texture, _ in textures.get_all_from_scope(
+                self._scope, size=(self._screen_width, self._screen_height)
+        ):
+            self._textures.append(texture)
             self._sizes.append((self._screen_width, self._screen_height))
 
     @property

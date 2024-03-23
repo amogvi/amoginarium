@@ -17,6 +17,7 @@ from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar, Flak
 from ..logic import Vec2, calculate_launch_angle, Color, is_related
 from ._base_entity import VisibleEntity
 from ..render_bindings import renderer
+from ..base._textures import textures
 
 
 class BaseTurret(VisibleEntity):
@@ -24,7 +25,7 @@ class BaseTurret(VisibleEntity):
     weapon: BaseWeapon
     _body_texture: int = ...
     _body_texture_path: str
-    _body_texture_path: str = "assets/images/static_turret_base.png"
+    _body_texture_path: str = "static_turret_base"
     _weapon_texture: int | None = ...
     _weapon_texture_path: str | None
     _max_hp: int = 80
@@ -41,7 +42,7 @@ class BaseTurret(VisibleEntity):
     @classmethod
     def load_textures(cls) -> None:
         if cls._body_texture is ...:
-            cls._body_texture, _ = renderer.load_texture(
+            cls._body_texture, _ = textures.get_texture(
                 cls._body_texture_path,
                 (64, 64)
             )

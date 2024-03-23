@@ -12,7 +12,6 @@ from icecream import ic
 from PIL import Image
 import pygame as pg
 import numpy as np
-import os
 
 from ..logic import Vec2, Color, convert_coord
 from ._base_renderer import BaseRenderer
@@ -47,36 +46,26 @@ class PyGameRenderer(BaseRenderer):
 
     @staticmethod
     def load_texture(
-            filename,
+            image,
             size,
             mirror=""
     ) -> tuple[TextureID, tuple[int, int]]:
-        # check if file exists
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(f"failed to load texture \"{filename}\"")
-
-        # for debugging
-        loading_texture = f"{filename}, mirror: \"{mirror}\""
-        ic(loading_texture)
-
-        im = Image.open(filename)
-
         if size is not None:
-            im = im.resize(convert_coord(size))
+            image = image.resize(convert_coord(size))
 
         if "x" not in mirror:
-            im = im.transpose(Image.FLIP_LEFT_RIGHT)
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
         # Flip the image vertically (since OpenGL's origin is at bottom-left)
         if "y" in mirror:
-            im = im.transpose(Image.FLIP_TOP_BOTTOM)
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
-        width, height = im.size
+        width, height = image.size
 
         # convert image to pygame surface
         pygame_surface = pg.image.fromstring(
-            im.tobytes(),
-            im.size,
+            image.tobytes(),
+            image.size,
             "RGBA"
         )
 

@@ -7,6 +7,7 @@ prototype renderer
 Author:
 Nilusink
 """
+from PIL import Image
 import typing as tp
 
 from ..logic import Color, coord_t
@@ -30,7 +31,7 @@ class BaseRenderer:
 
     @staticmethod
     def load_texture(
-            filename: str,
+            image: Image.Image,
             size: coord_t | None = None,
             mirror: tp.Literal["x", "y", "xy"] = "",
     ) -> tuple[TextureID, tuple[int, int]]:

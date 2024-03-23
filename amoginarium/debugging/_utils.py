@@ -33,7 +33,7 @@ def print_ic_style(value: str) -> str:
 
     print(
         f"{get_fg_color(36)}{prefix_time}"
-        f"{get_fg_color(247)}{prefix_arrow}{get_fg_color(36)}" +
-        value +
+        f"{get_fg_color(247)}{prefix_arrow}" +
+        f"{value}" +
         f"{CC.ctrl.ENDC}"
     )
