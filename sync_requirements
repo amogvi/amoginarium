@@ -1,2 +1,2 @@
 #! /usr/bin/zsh
-echo "${$(./venv/bin/pip freeze)//==/~=}" > requirements.txt
+pipreqs --mode compat . --force
