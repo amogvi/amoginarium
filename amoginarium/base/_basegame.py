@@ -129,7 +129,7 @@ class BaseGame:
             )
 
         self._background = ParalaxBackground(
-            "bg2_layers",
+            "bg3",
             *global_vars.screen_size.xy,
             parallax_multiplier=1.6
         )
@@ -147,8 +147,7 @@ class BaseGame:
         """
         # load entity textures
         textures.load_images("assets/images/textures.zip")
-        # textures.load_images("assets/images/bg1/bg1_layers.zip")
-        textures.load_images("assets/images/bg2/bg2_layers.zip")
+        textures.load_images("assets/images/bg3.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
         self._background.load_textures()
