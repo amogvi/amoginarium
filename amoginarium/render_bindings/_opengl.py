@@ -10,24 +10,60 @@ Nilusink
 from OpenGL.GL import glTranslate, glMatrixMode, glLoadIdentity, glTexCoord2f
 from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
 from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f, glEnd
-from OpenGL.GL import glDisable, glBegin, glVertex, glFlush
+from OpenGL.GL import glDisable, glBegin, glVertex, glFlush, glClearColor
+from OpenGL.GL import glBlendFunc
+from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT, GL_LINES
 from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_POLYGON
 from OpenGL.GL import GL_TEXTURE_MAG_FILTER, GL_LINEAR, GL_RGBA, GL_QUADS
-from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW
+from OpenGL.GL import GL_PROJECTION, GL_SRC_ALPHA, GL_BLEND
+from OpenGL.GLU import gluOrtho2D
+from pygame.locals import DOUBLEBUF, OPENGL
 from icecream import ic
 from PIL import Image
+import pygame as pg
 import numpy as np
 import os
 
 from ..logic import Vec2, Color, convert_coord
-from ._base_renderer import BaseRenderer
+from ._base_renderer import BaseRenderer, tColor
 from ..base._linked import global_vars
 
 
+# define types
+type TextureID = int
+
+
 class OpenGLRenderer(BaseRenderer):
+    def init(self, title):
+        pg.font.init()
+
+        # get screen size
+        screen_info = pg.display.Info()
+        window_size = (screen_info.current_w, screen_info.current_h)
+
+        # set global screen size and ppm
+        global_vars.screen_size = Vec2.from_cartesian(*window_size)
+        global_vars.pixel_per_meter = window_size[0] / 1920
+
+        pg.display.set_mode(
+            global_vars.screen_size.xy,
+            DOUBLEBUF | OPENGL | pg.RESIZABLE
+        )
+        # self.font = pg.font.SysFont(None, 24)
+        pg.display.set_caption(title)
+
+        # initialize OpenGL stuff
+        glClearColor(*(0, 0, 0, 255))
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluOrtho2D(0, *global_vars.screen_size.xy, 0)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     @staticmethod
-    def set_color(color):
+    def set_color(color: Color | tColor) -> None:
         """
         set gColor
         """
@@ -51,7 +87,11 @@ class OpenGLRenderer(BaseRenderer):
                 raise ValueError("Invalid color: ", color)
 
     @staticmethod
-    def load_texture(filename, size, mirror=""):
+    def load_texture(
+            filename,
+            size,
+            mirror=""
+    ) -> tuple[TextureID, tuple[int, int]]:
         # check if file exists
         if not os.path.isfile(filename):
             raise FileNotFoundError(f"failed to load texture \"{filename}\"")
@@ -97,7 +137,12 @@ class OpenGLRenderer(BaseRenderer):
         return texture_id, (width, height)
 
     @staticmethod
-    def draw_textured_quad(texture_id, pos, size, convert_global=True):
+    def draw_textured_quad(
+            texture_id: TextureID,
+            pos,
+            size,
+            convert_global=True
+    ):
         pos = convert_coord(pos, Vec2)
         size = convert_coord(size, Vec2)
 

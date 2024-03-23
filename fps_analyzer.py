@@ -5,15 +5,15 @@ data = json.load(open("debug.json", "r"))
 
 
 # filter out first second
-for n, (t_start, _) in enumerate(data["pygame"]):
+for n, (t_start, _) in enumerate(data["total"]):
     if t_start > 1:
         print("filtered first second")
-        fpss = data["pygame"][n:]
+        fpss = data["total"][n:]
         break
 
 else:
     print("unfiltered")
-    fpss = data["pygame"]
+    fpss = data["total"]
 
 # convert from loop time to fps
 fpss = sorted([1 / value[1] for value in fpss])
