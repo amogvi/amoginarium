@@ -211,7 +211,8 @@ class BaseTurret(VisibleEntity):
                 )
 
                 if shot:
-                    self.available_targets[new_target]["shot_at"] = 1
+                    self.available_targets[new_target]["shot_at"] = \
+                        self.weapon._reload_time
 
         else:
             self._target = ...
