@@ -146,9 +146,7 @@ class _WallCollider(_BaseGroup):
             sprite,
             alt_pos: coord_t = ...,
             alt_size: coord_t = ...
-    ) -> bool:
-        collides = False
-
+    ) -> bool | pg.sprite.Sprite:
         pos = sprite.position
         size = sprite.size
 
@@ -163,27 +161,25 @@ class _WallCollider(_BaseGroup):
             wall: tp.Any
 
             if all([
-                wall.position.y - wall.size.y / 2
+                wall.position.y
                 <= pos.y + size.y / 2,
-                pos.y + size.y / 2
-                <= wall.position.y + wall.size.y / 2,
-                wall.position.x - wall.size.x / 2
+                pos.y - size.y / 2
+                <= wall.position.y + wall.size.y,
+                wall.position.x
                 <= pos.x + size.x / 4,
                 pos.x - size.x / 4
-                <= wall.position.x + wall.size.x / 2
+                <= wall.position.x + wall.size.x
             ]):
-                collides = True
+                return wall
 
-        return collides
+        return False
 
     @staticmethod
     def on_ground(
             sprite,
             alt_pos: coord_t = ...,
             alt_size: coord_t = ...
-    ) -> bool:
-        collides = False
-
+    ) -> bool | pg.sprite.Sprite:
         pos = sprite.position
         size = sprite.size
 
@@ -198,18 +194,19 @@ class _WallCollider(_BaseGroup):
             wall: tp.Any
 
             if all([
-                wall.position.y - wall.size.y / 2
+                wall.position.y
                 <= pos.y + size.y / 2,
-                pos.y + size.y / 2
-                <= wall.position.y - (wall.size.y / 2 - 20),
-                wall.position.x - wall.size.x / 2
+                pos.y - size.y / 2
+                <= wall.position.y + 20,
+
+                wall.position.x
                 <= pos.x + size.x / 4,
                 pos.x - size.x / 4
-                <= wall.position.x + wall.size.x / 2
+                <= wall.position.x + wall.size.x
             ]):
-                collides = True
+                return wall
 
-        return collides
+        return False
 
 
 class _GravityAffected(_BaseGroup):

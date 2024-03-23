@@ -174,14 +174,14 @@ class Island(VisibleEntity):
 
     def update_rect(self) -> None:
         self.rect = pg.Rect(
-            self.position.x - self.size.x / 2,
-            self.position.y - self.size.y / 2,
+            self.position.x,
+            self.position.y,
             self.size.x,
             self.size.y
         )
 
     def gl_draw(self) -> None:
-        start_pos = self.world_position - self.size / 2
+        start_pos = self.world_position
 
         # fill island with dirt
         n_rows = m.ceil(self.size.y / self._image_size[1])

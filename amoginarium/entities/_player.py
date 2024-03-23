@@ -17,6 +17,7 @@ from ._weapons import Minigun as Weapon
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..controllers import Controller
+from ._island import Island
 from ..logic import Vec2
 
 
@@ -143,7 +144,7 @@ class Player(LRImageEntity):
         return self._hp
 
     @property
-    def on_ground(self) -> bool:
+    def on_ground(self) -> bool | Island:
         if self._controller.joy_y < 0:
             return False
 
@@ -181,9 +182,11 @@ class Player(LRImageEntity):
         self.weapon.update(delta)
 
         # stay onground if touching ground
-        if self.on_ground:
-            self.velocity.y = -1
+        on_ground = self.on_ground
+        if on_ground:
             self.acceleration.y = 0
+            self.velocity.y = 0
+            self.position.y = on_ground.position.y - (self.size.y / 2 - 10)
 
         # update controls
         self._controller.update(delta)
