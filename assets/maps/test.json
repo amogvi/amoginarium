@@ -25,6 +25,9 @@
         }
     ],
     "entities": [
-
+        {
+            "type": "turret.static.flak",
+            "pos": [1850, 800]
+        }
     ]
 }

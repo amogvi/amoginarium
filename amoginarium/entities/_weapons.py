@@ -80,7 +80,7 @@ class Bullet(ImageEntity):
 
     @property
     def on_ground(self) -> bool:
-        return self.position.y > 1000 or WallCollider.collides_with(self)
+        return WallCollider.collides_with(self)
 
     @property
     def damage(self) -> float:
@@ -112,7 +112,7 @@ class Bullet(ImageEntity):
 
     def update(self, delta):
         if any([
-            self.position.y > 1100,
+            self.position.y > 2000,
             self.position.x < Updated.world_position.x - 2000,
             self.position.x > Updated.world_position.x + 4000,
             perf_counter() - self._start_time > self._ttl,
@@ -145,9 +145,13 @@ class Bullet(ImageEntity):
                 self.position,
                 self._explosion_radius
             ):
-                if entity != self and entity.__class__ is not killed_by.__class__:
+                if all([
+                    entity != self,
+                    entity.__class__ is not killed_by.__class__
+                ]):
                     entity.hit(
-                        (1 - d / self._explosion_radius) * self._explosion_damage,
+                        (1 - .8 * d / self._explosion_radius)
+                        * self._explosion_damage,
                         hit_by=self
                     )
 
