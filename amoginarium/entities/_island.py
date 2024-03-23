@@ -7,6 +7,7 @@ an island in the sky
 Author:
 Nilusink
 """
+import pygame as pg
 import typing as tp
 import math as m
 import random
@@ -170,6 +171,14 @@ class Island(VisibleEntity):
         size = Vec2.from_cartesian(x_size, y_size)
 
         return cls(start, size)
+
+    def update_rect(self) -> None:
+        self.rect = pg.Rect(
+            self.position.x - self.size.x / 2,
+            self.position.y - self.size.y / 2,
+            self.size.x,
+            self.size.y
+        )
 
     def gl_draw(self) -> None:
         start_pos = self.world_position - self.size / 2

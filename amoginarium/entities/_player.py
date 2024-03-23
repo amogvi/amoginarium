@@ -144,12 +144,18 @@ class Player(LRImageEntity):
 
     @property
     def on_ground(self) -> bool:
-        out = self.position.y + self.size.y / 2 > 900
-        return out or WallCollider.collides_with(
+        if self._controller.joy_y < 0:
+            return False
+
+        return WallCollider.on_ground(
             self,
+            alt_pos=(
+                self.position.x,
+                self.position.y + (self.size.y / 2 - 10)
+            ),
             alt_size=(
                 self.size.x / 4,
-                self.size.y
+                10
             )
         )
 
@@ -173,6 +179,11 @@ class Player(LRImageEntity):
     def update(self, delta):
         # update reloads
         self.weapon.update(delta)
+
+        # stay onground if touching ground
+        if self.on_ground:
+            self.velocity.y = -1
+            self.acceleration.y = 0
 
         # update controls
         self._controller.update(delta)
