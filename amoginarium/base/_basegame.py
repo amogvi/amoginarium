@@ -21,11 +21,12 @@ from OpenGL.GL import glClearColor
 
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
+from ..entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
+from ..entities import Player, Island, Bullet, BaseTurret, FlakTurret
 from ..controllers import Controllers, Controller, GameController
-from ..entities import Player, Island, Bullet, BaseTurret
+from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
 from ..logic import SimpleLock, Color, Vec2
-from ..debugging import run_with_debug
 from ..render_bindings import renderer
 from ..communications import Server
 from ..animations import explosion
@@ -42,6 +43,15 @@ class BoundFunction(tp.TypedDict):
 def current_time() -> str:
     ms = str(round(perf_counter(), 4)).split(".")[1]
     return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
+
+
+SPAWNABLES: dict[str, BaseTurret] = {
+    "turret.static.sniper": SniperTurret,
+    "turret.static.ak47": AkTurret,
+    "turret.static.minigun": MinigunTurret,
+    "turret.static.mortar": MortarTurret,
+    "turret.static.flak": FlakTurret,
+}
 
 
 class BaseGame:
@@ -119,7 +129,7 @@ class BaseGame:
             )
 
         self._background = ParalaxBackground(
-            "bg1_layers",
+            "bg2_layers",
             *global_vars.screen_size.xy,
             parallax_multiplier=1.6
         )
@@ -137,7 +147,8 @@ class BaseGame:
         """
         # load entity textures
         textures.load_images("assets/images/textures.zip")
-        textures.load_images("assets/images/bg1/bg1_layers.zip")
+        # textures.load_images("assets/images/bg1/bg1_layers.zip")
+        textures.load_images("assets/images/bg2/bg2_layers.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
         self._background.load_textures()
@@ -174,6 +185,17 @@ class BaseGame:
             )
 
         # load entities
+        for entity in data["entities"]:
+            if entity["type"] not in SPAWNABLES:
+                print_ic_style(
+                    f"{CC.fg.RED}unknown entity: "
+                    f"{CC.fg.YELLOW}{entity["type"]}"
+                )
+                continue
+
+            SPAWNABLES[entity["type"]](Vec2.from_cartesian(
+                *entity["pos"]
+            ))
 
     def time_since_start(self) -> str:
         """
@@ -265,8 +287,6 @@ class BaseGame:
             elif min_player_pos.x < background_pos_left:
                 self._background.scroll(-delta * 15)
                 Updated.world_position.x = self._background.position
-
-            # global_vars.pixel_per_meter *= .9995
 
             # draw background
             self._background.draw()

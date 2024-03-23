@@ -183,7 +183,7 @@ class Player(LRImageEntity):
 
         # stay onground if touching ground
         on_ground = self.on_ground
-        if on_ground:
+        if on_ground and self.velocity.y > 0:
             self.acceleration.y = 0
             self.velocity.y = 0
             self.position.y = on_ground.position.y - (self.size.y / 2 - 10)
