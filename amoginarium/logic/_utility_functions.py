@@ -27,7 +27,7 @@ def is_parent(parent: object, child: object) -> bool:
     if not hasattr(child, "parent"):
         return False
 
-    return parent.id == child.parent.id
+    return parent == child.parent
 
 
 def is_related(a: object, b: object, depth: int = 2) -> bool:
@@ -39,15 +39,26 @@ def is_related(a: object, b: object, depth: int = 2) -> bool:
     2: true if a == b or parent
     3: true if all of the above or siblings
     """
-    is_same = a.id == b.id
+    is_same = a == b
     if depth == 1:
         return is_same
 
-    is_parented = is_parent(a, b) or is_parent(b, a)
+    is_parented = False
+
+    try:
+        is_parented = is_parented or a.parent == b
+    except AttributeError:
+        pass
+
+    try:
+        is_parented = is_parented or b.parent == a
+    except AttributeError:
+        pass
+
     if depth == 2:
         return is_same or is_parented
 
-    is_sibling = a.parent.id == b.parent.id
+    is_sibling = a == b
     if depth == 2:
         return is_same or is_parented or is_sibling
 

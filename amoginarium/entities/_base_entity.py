@@ -73,6 +73,10 @@ class Entity(pg.sprite.Sprite):
         """
         return self.position - Updated.world_position
 
+    @property
+    def is_bullet(self) -> bool:
+        return False
+
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
 

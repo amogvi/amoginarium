@@ -102,6 +102,7 @@ class BaseTurret(VisibleEntity):
 
         # filter stuff shot by myself
         targets = [e for e in targets if not is_related(self, e[1])]
+        # targets = []
 
         if len(targets) > 0:
             _, closest_target = targets[0]
