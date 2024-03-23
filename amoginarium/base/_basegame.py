@@ -30,6 +30,7 @@ from ..render_bindings import renderer
 from ..communications import Server
 from ..animations import explosion
 from ._linked import global_vars
+from ._textures import textures
 
 
 class BoundFunction(tp.TypedDict):
@@ -113,12 +114,12 @@ class BaseGame:
                 func,
                 run_with_debug(
                     on_fail=lambda *_: self.end(),
-                    reraise_errors=True
+                    reraise_errors=False
                 )(getattr(self, func))
             )
 
         self._background = ParalaxBackground(
-            "assets/images/bg1",
+            "bg1_layers",
             *global_vars.screen_size.xy,
             parallax_multiplier=1.6
         )
@@ -135,6 +136,10 @@ class BaseGame:
         load all textures n stuff
         """
         # load entity textures
+        textures.load_images("assets/images/textures.zip")
+        textures.load_images("assets/images/bg1/bg1_layers.zip")
+        textures.load_images("assets/images/animations/explosion.zip")
+
         self._background.load_textures()
         Island.load_textures()
         Player.load_textures()

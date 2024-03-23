@@ -16,12 +16,13 @@ import typing as tp
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ._base_entity import ImageEntity, Entity
 from ..render_bindings import renderer
+from ..base._textures import textures
 from ..animations import explosion
 from ..logic import Vec2, Color
 from ..base import WallCollider
 
 
-BULLET_PATH = "assets/images/bullet.png"
+BULLET_PATH = "bullet"
 
 
 class Bullet(ImageEntity):
@@ -38,7 +39,7 @@ class Bullet(ImageEntity):
 
     @classmethod
     def load_textures(cls) -> None:
-        cls._bullet_texture, _ = renderer.load_texture(BULLET_PATH, (10, 10))
+        cls._bullet_texture, _ = textures.get_texture(BULLET_PATH, (10, 10))
 
     def __init__(
         self,

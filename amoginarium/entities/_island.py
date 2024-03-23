@@ -12,6 +12,7 @@ import math as m
 import random
 
 from ..render_bindings import renderer
+from ..base._textures import textures
 from ..entities import VisibleEntity
 from ..base import Walls
 from ..logic import Vec2
@@ -54,79 +55,79 @@ class Island(VisibleEntity):
         if cls._island_single_texture is not ...:
             return
 
-        cls._island_single_texture, _ = renderer.load_texture(
-            "assets/images/grass_single.png",
+        cls._island_single_texture, _ = textures.get_texture(
+            "grass_single",
             cls._image_size
         )
 
-        cls._island_single_right_texture, _ = renderer.load_texture(
-            "assets/images/grass_single_right.png",
+        cls._island_single_right_texture, _ = textures.get_texture(
+            "grass_single_right",
             cls._image_size
         )
-        cls._island_single_left_texture, _ = renderer.load_texture(
-            "assets/images/grass_single_left.png",
+        cls._island_single_left_texture, _ = textures.get_texture(
+            "grass_single_left",
             cls._image_size
         )
-        cls._island_single_top_texture, _ = renderer.load_texture(
-            "assets/images/grass_single_top.png",
+        cls._island_single_top_texture, _ = textures.get_texture(
+            "grass_single_top",
             cls._image_size
         )
-        cls._island_single_bottom_texture, _ = renderer.load_texture(
-            "assets/images/grass_single_bottom.png",
+        cls._island_single_bottom_texture, _ = textures.get_texture(
+            "grass_single_bottom",
             cls._image_size
         )
 
-        cls._island_left_texture, _ = renderer.load_texture(
-            "assets/images/grass_left.png",
+        cls._island_left_texture, _ = textures.get_texture(
+            "grass_left",
             cls._image_size,
             mirror="x"
         )
-        cls._island_left_inv_texture, _ = renderer.load_texture(
-            "assets/images/grass_left_bottom.png",
-            cls._image_size,
-            mirror="x"
-        )
-
-        cls._island_middle_texture, _ = renderer.load_texture(
-            "assets/images/grass_middle.png",
-            cls._image_size,
-            mirror="x"
-        )
-        cls._island_middle_inv_texture, _ = renderer.load_texture(
-            "assets/images/grass_middle_bottom.png",
+        cls._island_left_inv_texture, _ = textures.get_texture(
+            "grass_left_bottom",
             cls._image_size,
             mirror="x"
         )
 
-        cls._island_right_texture, _ = renderer.load_texture(
-            "assets/images/grass_right.png",
+        cls._island_middle_texture, _ = textures.get_texture(
+            "grass_middle",
             cls._image_size,
             mirror="x"
         )
-        cls._island_right_inv_texture, _ = renderer.load_texture(
-            "assets/images/grass_right_bottom.png",
+        cls._island_middle_inv_texture, _ = textures.get_texture(
+            "grass_middle_bottom",
             cls._image_size,
             mirror="x"
         )
 
-        cls._island_wall_right_texture, _ = renderer.load_texture(
-            "assets/images/grass_wall_right.png",
+        cls._island_right_texture, _ = textures.get_texture(
+            "grass_right",
+            cls._image_size,
+            mirror="x"
+        )
+        cls._island_right_inv_texture, _ = textures.get_texture(
+            "grass_right_bottom",
+            cls._image_size,
+            mirror="x"
+        )
+
+        cls._island_wall_right_texture, _ = textures.get_texture(
+            "grass_wall_right",
             cls._image_size,
             mirror=""
         )
-        cls._island_wall_left_texture, _ = renderer.load_texture(
-            "assets/images/grass_wall_right.png",
+        cls._island_wall_left_texture, _ = textures.get_texture(
+            "grass_wall_right",
             cls._image_size,
             mirror="x"
         )
 
-        cls._dirt_texture, _ = renderer.load_texture(
-            "assets/images/dirt.png",
+        cls._dirt_texture, _ = textures.get_texture(
+            "dirt",
             cls._image_size,
             mirror="x"
         )
-        cls._dirt_hole_texture, _ = renderer.load_texture(
-            "assets/images/dirt_hole.png",
+        cls._dirt_hole_texture, _ = textures.get_texture(
+            "dirt_hole",
             cls._image_size,
             mirror="x"
         )

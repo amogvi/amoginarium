@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+assets/images/textures/
+**/layers/
+**/_images/
 
 # C extensions
 *.so
