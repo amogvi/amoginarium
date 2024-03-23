@@ -25,6 +25,8 @@ type TextureID = pg.Surface
 
 class PyGameRenderer(BaseRenderer):
     def init(self, title):
+        ic("using pygame backend")
+
         pg.font.init()
 
         # get screen size
@@ -34,6 +36,7 @@ class PyGameRenderer(BaseRenderer):
         # set global screen size and ppm
         global_vars.screen_size = Vec2.from_cartesian(*window_size)
         global_vars.pixel_per_meter = window_size[0] / 1920
+        global_vars.max_fps = pg.display.get_desktop_refresh_rates()
 
         self.screen = pg.display.set_mode(window_size, pg.RESIZABLE)
         # self.lowest_layer = pg.Surface(window_size, pg.SRCALPHA, 32)

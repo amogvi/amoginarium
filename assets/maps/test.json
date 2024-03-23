@@ -5,12 +5,22 @@
     "platforms": [
         {
             "pos": [0, 800],
-            "size": [1920, 20],
+            "size": [1920, 180],
             "texture": "path/to/texture.png"
         },
         {
             "pos": [1900, 850],
-            "size": [500, 20],
+            "size": [500, 64],
+            "texture": "path/to/texture.png"
+        },
+        {
+            "pos": [200, 550],
+            "size": [64, 64],
+            "texture": "path/to/texture.png"
+        },
+        {
+            "pos": [500, 550],
+            "size": [64, 128],
             "texture": "path/to/texture.png"
         }
     ],

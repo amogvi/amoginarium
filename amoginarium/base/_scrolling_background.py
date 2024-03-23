@@ -56,7 +56,8 @@ class ParalaxBackground:
         directory: str,
         screen_width: int,
         screen_height: int,
-        parallax_multiplier: float = 1.2
+        parallax_multiplier: float = 1.2,
+        load: bool = False
     ) -> None:
         self._directory = directory + "/layers/"
         self._multiplier = parallax_multiplier
@@ -68,17 +69,20 @@ class ParalaxBackground:
         self._textures = []
         self._sizes = []
 
-        for file in sorted(os.listdir(self._directory)):
-            # self._images.append(pg.image.load(
-            #     self._directory + file
-            # ).convert_alpha())
+        if load:
+            self.load_textures()
 
+    def load_textures(self) -> None:
+        """
+        load all textures
+        """
+        for file in sorted(os.listdir(self._directory)):
             tid, _ = renderer.load_texture(
                 self._directory + file,
-                (screen_width, screen_height)
+                (self._screen_width, self._screen_height)
             )
             self._textures.append(tid)
-            self._sizes.append((screen_width, screen_height))
+            self._sizes.append((self._screen_width, self._screen_height))
 
     @property
     def position(self) -> float:
@@ -99,6 +103,10 @@ class ParalaxBackground:
         draw background to surface
         """
         n_layers = len(self._textures)-1
+        if n_layers == -1:
+            self.load_textures()
+            return self.draw()
+
         for layer in range(n_layers, -1, -1):
             image_pos = self._position + 10 % self._screen_width
             image_pos *= self._multiplier**(n_layers-layer)

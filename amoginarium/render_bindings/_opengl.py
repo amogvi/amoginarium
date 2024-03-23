@@ -36,6 +36,8 @@ type TextureID = int
 
 class OpenGLRenderer(BaseRenderer):
     def init(self, title):
+        ic("using OpenGL backend")
+
         pg.font.init()
 
         # get screen size
@@ -45,6 +47,9 @@ class OpenGLRenderer(BaseRenderer):
         # set global screen size and ppm
         global_vars.screen_size = Vec2.from_cartesian(*window_size)
         global_vars.pixel_per_meter = window_size[0] / 1920
+
+        # set max fps to monitor refresh rate
+        global_vars.max_fps = max(pg.display.get_desktop_refresh_rates())
 
         pg.display.set_mode(
             global_vars.screen_size.xy,
