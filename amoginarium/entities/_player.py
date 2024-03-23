@@ -144,7 +144,13 @@ class Player(LRImageEntity):
     @property
     def on_ground(self) -> bool:
         out = self.position.y + self.size.y / 2 > 900
-        return out or WallCollider.collides_with(self)
+        return out or WallCollider.collides_with(
+            self,
+            alt_size=(
+                self.size.x / 4,
+                self.size.y
+            )
+        )
 
     @property
     def parent(self) -> tp.Self:

@@ -12,7 +12,7 @@ import pygame as pg
 import typing as tp
 import numpy as np
 
-from ..logic import Vec2, is_related, Color
+from ..logic import Vec2, is_related, Color, coord_t, convert_coord
 from ..render_bindings import renderer
 
 
@@ -142,19 +142,34 @@ class _WallCollider(_BaseGroup):
         on_wall: bool
     """
     @staticmethod
-    def collides_with(sprite) -> bool:
+    def collides_with(
+            sprite,
+            alt_pos: coord_t = ...,
+            alt_size: coord_t = ...
+    ) -> bool:
         collides = False
+
+        pos = sprite.position
+        size = sprite.size
+
+        if alt_pos is not ...:
+            pos = convert_coord(alt_pos, Vec2)
+
+        if alt_size is not ...:
+            size = convert_coord(alt_size, Vec2)
+
         for wall in Walls.sprites():
             sprite: tp.Any
             wall: tp.Any
+
             if all([
                 wall.position.y - wall.size.y / 2
-                <= sprite.position.y + sprite.size.y / 2,
-                sprite.position.y + sprite.size.y / 2
+                <= pos.y + size.y / 2,
+                pos.y + size.y / 2
                 <= wall.position.y + wall.size.y / 2,
                 wall.position.x - wall.size.x / 2
-                <= sprite.position.x + sprite.size.x / 4,
-                sprite.position.x - sprite.size.x / 4
+                <= pos.x + size.x / 4,
+                pos.x - size.x / 4
                 <= wall.position.x + wall.size.x / 2
             ]):
                 collides = True

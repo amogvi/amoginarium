@@ -81,7 +81,7 @@ ax2.grid()
 
 ax1.plot(pygame_xs, pygame_ys, label="pygame")
 ax1.plot(logic_xs, logic_ys, label="logic")
-ax1.plot(comms_xs, comms_ys, label="total")
+# ax1.plot(comms_xs, comms_ys, label="total")
 
 ax1.set_xlabel("time since start in s")
 ax1.set_ylabel("loop time in ms")

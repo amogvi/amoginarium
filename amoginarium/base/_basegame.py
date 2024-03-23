@@ -117,10 +117,15 @@ class BaseGame:
                 )(getattr(self, func))
             )
 
-        # load map
-        self.load_map("assets/maps/test.json")
+        self._background = ParalaxBackground(
+            "assets/images/bg1",
+            *global_vars.screen_size.xy,
+            parallax_multiplier=1.6
+        )
 
+        # load map
         self.preload()
+        self.load_map("assets/maps/test.json")
 
         self._game_start = 0
 
@@ -130,11 +135,8 @@ class BaseGame:
         load all textures n stuff
         """
         # load entity textures
-        self._background = ParalaxBackground(
-            "assets/images/bg1",
-            *global_vars.screen_size.xy,
-            parallax_multiplier=1.6
-        )
+        self._background.load_textures()
+        Island.load_textures()
         Player.load_textures()
         Bullet.load_textures()
         BaseTurret.load_textures()
@@ -306,7 +308,7 @@ class BaseGame:
             )
             last = now
 
-            clock.tick(60)
+            clock.tick(global_vars.max_fps)
 
         ic("pygame end")
 
