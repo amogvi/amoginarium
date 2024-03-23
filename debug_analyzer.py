@@ -28,11 +28,11 @@ for value in data["logic"][2:]:
     logic_ys.append(value[1] * 1000)
 
 
-comms_xs = logic_xs
-comms_ys = [logic_ys[i] + pygame_ys[i] for i in range(len(logic_ys))]
-# for value in data["comms"]:
-#     comms_xs.append(value[0])
-#     comms_ys.append(value[1] * 1000)
+comms_xs = []
+comms_ys = []
+for value in data["total"]:
+    comms_xs.append(value[0])
+    comms_ys.append(value[1] * 1000)
 
 
 bullets_xs = []

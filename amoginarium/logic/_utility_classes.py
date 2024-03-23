@@ -220,6 +220,10 @@ class Color:
         )
 
     @property
+    def auto255(self) -> tuple[int, int, int, int] | tuple[int, int, int]:
+        return self.rgb255 if self.a is None else self.rgba255
+
+    @property
     def rgb1(self) -> tuple[float, float, float]:
         return self.to_1(self.r, self.g, self.b)
 
@@ -229,6 +233,12 @@ class Color:
             raise ValueError("alpha value has not been set")
 
         return self.to_1(self.r, self.g, self.b, self.a)
+
+    @property
+    def auto1(
+            self
+    ) -> tuple[float, float, float, float] | tuple[float, float, float]:
+        return self.rgb255 if self.a is None else self.rgba255
 
     @property
     def is_rgba(self) -> bool:

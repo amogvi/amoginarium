@@ -12,16 +12,19 @@ import typing as tp
 from ..logic import Color, coord_t
 
 
+# define types
 type Color3 = tuple[float, float, float]
 type Color4 = tuple[float, float, float, float]
 type tColor = Color3 | Color4
 
+# depending on the renderer, TextureID will be a different type
+type TextureID = tp.Any
+
 
 class BaseRenderer:
-    @staticmethod
-    def set_color(color: Color | tColor) -> None:
+    def init(self, title: str) -> None:
         """
-        set gColor
+        initialize the renderer and global_vars
         """
         raise NotImplementedError
 
@@ -30,7 +33,7 @@ class BaseRenderer:
             filename: str,
             size: coord_t | None = None,
             mirror: tp.Literal["x", "y", "xy"] = "",
-    ) -> tuple[int, tuple[int]]:
+    ) -> tuple[TextureID, tuple[int, int]]:
         """
         load an image texture
 
@@ -40,7 +43,7 @@ class BaseRenderer:
 
     @staticmethod
     def draw_textured_quad(
-            texture_id: int,
+            texture_id: TextureID,
             pos: coord_t,
             size: coord_t,
             convert_global: bool = True

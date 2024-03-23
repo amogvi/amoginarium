@@ -8,7 +8,6 @@ Author:
 Nilusink
 """
 from concurrent.futures import ThreadPoolExecutor
-from pygame.locals import DOUBLEBUF, OPENGL
 from time import perf_counter, strftime
 from contextlib import suppress
 from icecream import ic
@@ -18,11 +17,7 @@ import asyncio
 import json
 import os
 
-from OpenGL.GL import glEnable, glClearColor, glBlendFunc
-from OpenGL.GL import glMatrixMode, glLoadIdentity
-from OpenGL.GL import GL_PROJECTION, GL_SRC_ALPHA, GL_BLEND
-from OpenGL.GL import GL_ONE_MINUS_SRC_ALPHA
-from OpenGL.GLU import gluOrtho2D
+from OpenGL.GL import glClearColor
 
 from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
@@ -31,7 +26,7 @@ from ..entities import Player, Island, Bullet, BaseTurret
 from ._scrolling_background import ParalaxBackground
 from ..logic import SimpleLock, Color, Vec2
 from ..debugging import run_with_debug
-# from ..render_bindings import renderer
+from ..render_bindings import renderer
 from ..communications import Server
 from ..animations import explosion
 from ._linked import global_vars
@@ -81,6 +76,7 @@ class BaseGame:
         self._logic_loop_times: list[tuple[float, float]] = []
         self._pygame_loop_times: list[tuple[float, float]] = []
         self._comms_loop_times: list[tuple[float, float]] = []
+        self._total_loop_times: list[tuple[float, float]] = []
 
         # time since start, n_bullets, loop_time
         self._n_bullets_times: list[tuple[float, float, float]] = []
@@ -103,35 +99,9 @@ class BaseGame:
         # server setup
         self._server = Server(("0.0.0.0", game_port))
 
-        # initialize pygame stuff
+        # initialize pygame (logic) and renderer
         pg.init()
-        pg.font.init()
-
-        screen_info = pg.display.Info()
-        window_size = (screen_info.current_w, screen_info.current_h)
-
-        # set global screen size and ppm
-        global_vars.screen_size = Vec2.from_cartesian(*window_size)
-        global_vars.pixel_per_meter = window_size[0] / 1920
-
-        self.screen = pg.display.set_mode(
-            window_size,
-            DOUBLEBUF | OPENGL | pg.RESIZABLE
-        )
-        self.lowest_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
-        self.middle_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
-        self.top_layer = pg.Surface(window_size, pg.SRCALPHA, 32)
-        self.font = pg.font.SysFont(None, 24)
-        pg.display.set_caption("amoginarium")
-
-        # initialize OpenGL stuff
-        glClearColor(*(0, 0, 0, 255))
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluOrtho2D(0, *window_size, 0)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        renderer.init("amoginarium")
 
         # initialize background
         self._background = ...
@@ -248,7 +218,7 @@ class BaseGame:
             delta = now-last
 
             # update logic
-            logic_time = self._update_logic(delta, now)
+            self._update_logic(delta, now)
 
             # pygame loop time
             start = perf_counter()
@@ -271,15 +241,14 @@ class BaseGame:
 
             # clear screen
             glClearColor(0, 0, 0, 1)
-            # renderer.draw_rect((0, 0), global_vars.screen_size, (0, 0, 0), False)
-            self.screen.fill((0, 0, 0, 0))
-            self.middle_layer.fill((0, 0, 0, 0))
-            self.top_layer.fill((0, 0, 0, 0))
+            # self.screen.fill((0, 0, 0, 0))
+            # self.middle_layer.fill((0, 0, 0, 0))
+            # self.top_layer.fill((0, 0, 0, 0))
 
             min_player_pos, max_player_pos = Players.get_position_extremes()
 
             background_pos_right = self._background.position\
-                + self.screen.get_width() - 60
+                + global_vars.screen_size.x - 60
             background_pos_left = self._background.position + 60
 
             if max_player_pos.x > background_pos_right:
@@ -331,6 +300,9 @@ class BaseGame:
 
             self._pygame_loop_times.append(
                 (now - self._game_start, perf_counter() - start)
+            )
+            self._total_loop_times.append(
+                (now - self._game_start, delta)
             )
             last = now
 
@@ -444,7 +416,8 @@ class BaseGame:
                 "logic": self._logic_loop_times,
                 "comms": self._comms_loop_times,
                 "bullets": self._n_bullets_times,
-                "pygame": self._pygame_loop_times
+                "pygame": self._pygame_loop_times,
+                "total": self._total_loop_times
             }, out)
 
         ic("done writing debug data")
