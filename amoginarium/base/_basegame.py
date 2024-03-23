@@ -157,6 +157,10 @@ class BaseGame:
         BaseTurret.load_textures()
         explosion.load_textures(size=(512, 512))
 
+    @property
+    def id(self) -> int:
+        return -1
+
     def load_map(self, map_path: tp.LiteralString) -> None:
         """
         load a map from a json file
@@ -174,6 +178,24 @@ class BaseGame:
         pg.display.set_caption(f"amoginarium - {data["name"]}")
         self._bg_color = Color.to_1(*data["background"])
         Players.spawn_point = Vec2.from_cartesian(*data["spawn_pos"])
+
+        # # spwan a lot of bulllets
+        # Players.spawn_point = Vec2.from_cartesian(950, -100)
+        # n_bullets = 150
+        # x_spacing = global_vars.screen_size.x / n_bullets
+
+        # for i in range(n_bullets):
+        #     Bullet(
+        #          self,
+        #          Vec2.from_cartesian(0 + x_spacing*i, 0),
+        #          Vec2.from_cartesian(0, 100), time_to_life=5
+        #     )
+        #     Bullet(
+        #          self,
+        #          Vec2.from_cartesian(0 + x_spacing*i, 100),
+        #          Vec2.from_cartesian(0, 100), time_to_life=5
+        #     )
+        # return
 
         # load islands
         for island in data["platforms"]:

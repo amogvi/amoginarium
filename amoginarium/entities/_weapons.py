@@ -91,8 +91,10 @@ class Bullet(ImageEntity):
             return 0
 
         # calculate damage based on base_damage and velocity
+        x = max(self._initial_velocity.length, 800)
+
         speed_mult = 1 + (
-            (self.velocity.length - 1300) / self._initial_velocity.length
+            (self.velocity.length - 1300) / x
         ) * .5
         damage = self._base_damage * speed_mult
 
@@ -103,6 +105,10 @@ class Bullet(ImageEntity):
     @property
     def parent(self) -> Entity:
         return self._parent
+
+    @property
+    def is_bullet(self) -> bool:
+        return True
 
     def hit(self, _damage: float, hit_by: tp.Self = ...) -> None:
         self.kill(killed_by=hit_by)
@@ -352,7 +358,7 @@ class Minigun(BaseWeapon):
         super().__init__(
             parent,
             reload_time=3,
-            recoil_time=.02,
+            recoil_time=.018,
             recoil_factor=2,
             mag_size=80,
             inaccuracy=.01093606,

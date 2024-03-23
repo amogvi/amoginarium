@@ -8,12 +8,14 @@ Author:
 Nilusink
 """
 from contextlib import suppress
+# from icecream import ic
 import pygame as pg
 import typing as tp
 import numpy as np
 
 from ..logic import Vec2, is_related, Color, coord_t, convert_coord
 from ..render_bindings import renderer
+# from ..debugging import run_with_debug
 
 
 class _BaseGroup(pg.sprite.Group):
@@ -339,10 +341,27 @@ class _CollisionDestroyed(_BaseGroup):
         hit(damage: float) -> None
         kill() -> None
     """
+    @staticmethod
+    def dynamic_collide(a: pg.sprite.Sprite, b: pg.sprite.Sprite) -> bool:
+        """
+        use different methods depending on what is being collided
+        """
+        if a.is_bullet and b.is_bullet:
+            return _CollisionDestroyed.point_in_sprite(a, b.position.xy)
+
+        if a.is_bullet:
+            return _CollisionDestroyed.point_in_sprite(b, a.position.xy)
+
+        if b.is_bullet:
+            return _CollisionDestroyed.point_in_sprite(b, a.position.xy)
+
+        return pg.sprite.collide_rect(a, b)
+
+    # @profile
     def update(self) -> None:
-        calculated: list[set] = []
+        # calculated: list[set] = []
         for sprite in CollisionDestroyed.sprites():
-            calculated.append({sprite, sprite})
+            # calculated.append({sprite, sprite})
             # ic(sprite.__class__.__name__, sprite.rect)
 
             with suppress(AttributeError):
@@ -350,11 +369,12 @@ class _CollisionDestroyed(_BaseGroup):
                     sprite: tp.Any
                     other: tp.Any
 
-                    if {sprite, other} not in calculated:
+                    # if {sprite, other} not in calculated:
+                    if 1:
                         if all([
-                            # self.size_collide(sprite, other),
                             pg.sprite.collide_rect(sprite, other),
-                            not is_related(sprite, other)
+                            # self.dynamic_collide(sprite, other),
+                            not is_related(sprite, other, 2)
                         ]):
                             try:
                                 dmg = other.damage
@@ -383,7 +403,7 @@ class _CollisionDestroyed(_BaseGroup):
                                 if dmg != 0:
                                     other.hit_someone(target_hp=hp)
 
-                    calculated.append({sprite, other})
+                    # calculated.append({sprite, other})
 
     @staticmethod
     def size_collide(sprite1, sprite2) -> bool:
@@ -392,6 +412,16 @@ class _CollisionDestroyed(_BaseGroup):
         return (
             sprite1.position_center - sprite2.position_center
         ).length <= collision_distance
+
+    @staticmethod
+    def point_in_sprite(sprite, point: tuple) -> bool:
+        start = sprite.position - sprite.size / 2
+        end = sprite.position + sprite.size / 2
+
+        return all([
+            start.x <= point[0] <= end.x,
+            start.y <= point[1] <= end.y
+        ])
 
     @staticmethod
     def box_collide(sprite1, sprite2) -> bool:
