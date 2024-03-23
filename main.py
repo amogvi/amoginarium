@@ -4,7 +4,7 @@ from amoginarium.base import BaseGame
 
 
 def main():
-    game = BaseGame(debug=True)
+    game = BaseGame(debug=True, show_targets=False)
 
     # create initial controller
     KeyboardController()

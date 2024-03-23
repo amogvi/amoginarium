@@ -72,8 +72,11 @@ class BaseGame:
     def __init__(
             self,
             debug: bool = False,
-            game_port: int = 12345
+            game_port: int = 12345,
+            show_targets: bool = False
     ) -> None:
+        global_vars.show_targets = show_targets
+
         # configure icecream
         if not debug:
             ic.disable()
@@ -266,6 +269,8 @@ class BaseGame:
             # total delta since last call
             now = perf_counter()
             delta = now-last
+
+            # delta *= .1  # slow-motion
 
             # update logic
             self._update_logic(delta, now)

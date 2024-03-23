@@ -16,6 +16,7 @@ import typing as tp
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
 from ._base_entity import ImageEntity, Entity
 from ..render_bindings import renderer
+from ..base._linked import global_vars
 from ..base._textures import textures
 from ..animations import explosion
 from ..logic import Vec2, Color
@@ -51,6 +52,7 @@ class Bullet(ImageEntity):
         time_to_life: float = 2,
         explosion_radius: float = -1,
         explosion_damage: float = 0,
+        target_pos: Vec2 = ...,
         size: int = 10
     ) -> None:
         size = Vec2.from_cartesian(size, size)
@@ -61,6 +63,7 @@ class Bullet(ImageEntity):
         self._initial_velocity = initial_velocity
         self._explosion_radius = explosion_radius
         self._explosion_damage = explosion_damage
+        self._target_pos = target_pos
 
         texture_id = self._bullet_texture
 
@@ -117,11 +120,13 @@ class Bullet(ImageEntity):
         self.kill()
 
     def update(self, delta):
+        self._ttl -= delta
+
         if any([
             self.position.y > 2000,
             self.position.x < Updated.world_position.x - 2000,
             self.position.x > Updated.world_position.x + 4000,
-            perf_counter() - self._start_time > self._ttl,
+            self._ttl <= 0,
             self.on_ground
         ]):
             self.kill()
@@ -177,10 +182,24 @@ class Bullet(ImageEntity):
         if not self._casing:
             renderer.draw_circle(
                 self.world_position,
-                self.size.x * .4,
+                self.size.x * .5,
                 8,
                 Color.from_255(255, 255, 60)
             )
+
+            if global_vars.show_targets and self._target_pos is not ...:
+                renderer.draw_line(
+                    self.position,
+                    self._target_pos,
+                    Color.from_255(255, 100, 0, 220)
+                )
+                renderer.draw_circle(
+                    self._target_pos,
+                    16,
+                    32,
+                    Color.from_255(255, 100, 0, 220)
+                )
+
             return
 
         return super().gl_draw()
@@ -284,20 +303,23 @@ class BaseWeapon:
     def shoot(
         self,
         direction: Vec2,
-        bullet_tof: float = ...
-    ) -> None:
+        bullet_tof: float = ...,
+        target_pos: Vec2 = ...
+    ) -> bool:
         """
         shoot a bullet and check for recoil and reload
+
+        :returns: true if shot
         """
         # check if mag is empty
         if self._mag_state <= 0:
             if self._current_reload_time == 0:
                 self._current_reload_time = self._reload_time
 
-            return
+            return False
 
         if self._current_recoil_time > 0:
-            return
+            return False
 
         # inacuracy
         offset = randint(-255, 255) / 255
@@ -330,7 +352,8 @@ class BaseWeapon:
             size=self._bullet_size,
             explosion_radius=self._bullet_explosion_radius,
             explosion_damage=self._bullet_explosion_damage,
-            time_to_life=bullet_lifetime
+            time_to_life=bullet_lifetime,
+            target_pos=target_pos
         )
 
         if self._drop_casings:
@@ -344,6 +367,8 @@ class BaseWeapon:
                 casing_direction * 500 + self.parent.velocity,
                 casing=True
             )
+
+        return True
 
     def reload(self, instant: bool = False) -> None:
         """
@@ -410,7 +435,7 @@ class Mortar(BaseWeapon):
             mag_size=1,
             inaccuracy=.00100002,
             bullet_size=22,
-            bullet_speed=1050,
+            bullet_speed=1400,
             bullet_damage=40,
             drop_casings=drop_casings,
             bullet_explosion_radius=200,
@@ -429,6 +454,7 @@ class Flak(BaseWeapon):
             mag_size=4,
             inaccuracy=.0100002,
             bullet_size=18,
+            # bullet_speed=1400*2,  # can shoot down bullets, but is too op
             bullet_speed=1400,
             bullet_damage=30,
             drop_casings=drop_casings,
