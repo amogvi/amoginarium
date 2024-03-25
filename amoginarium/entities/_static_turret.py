@@ -19,6 +19,7 @@ from ._base_entity import VisibleEntity
 from ..render_bindings import renderer
 from ..base._linked import global_vars
 from ..base._textures import textures
+from ..base._linked import Coalitions
 
 
 class BaseTurret(VisibleEntity):
@@ -55,7 +56,7 @@ class BaseTurret(VisibleEntity):
 
     def __init__(
         self,
-        parent,
+        coalition: Coalitions,
         size: Vec2,
         position: Vec2,
         weapon: BaseWeapon,
@@ -64,7 +65,6 @@ class BaseTurret(VisibleEntity):
         intercept_bullets: bool = False,
         intercept_players: bool = True
     ) -> None:
-        self._parent = parent
         self.weapon = weapon
         self.engagement_range = engagement_range
         self.airburst_munition = airburst_munition
@@ -76,7 +76,8 @@ class BaseTurret(VisibleEntity):
 
         super().__init__(
             size=size,
-            initial_position=position
+            initial_position=position,
+            coalition=coalition
         )
 
         self.add(CollisionDestroyed, HasBars)
@@ -88,10 +89,6 @@ class BaseTurret(VisibleEntity):
     @property
     def hp(self) -> int:
         return self._hp
-
-    @property
-    def parent(self):
-        return self._parent
 
     def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
@@ -142,7 +139,7 @@ class BaseTurret(VisibleEntity):
         )
 
         # filter stuff shot by myself
-        targets = [e for e in targets if not is_related(self, e[1], 4)]
+        targets = [e for e in targets if not is_related(self, e[1], depth=4)]
         # targets = []
 
         for target in targets:
@@ -293,12 +290,13 @@ class BaseTurret(VisibleEntity):
 class SniperTurret(BaseTurret):
     _max_hp: int = 40
 
-    def __init__(self, parent, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Sniper(self, True)
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -309,12 +307,13 @@ class SniperTurret(BaseTurret):
 class AkTurret(BaseTurret):
     _max_hp: int = 60
 
-    def __init__(self, parent, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Ak47(self, False)
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -325,12 +324,13 @@ class AkTurret(BaseTurret):
 class MinigunTurret(BaseTurret):
     _max_hp: int = 60
 
-    def __init__(self, parent, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Minigun(self, False)
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -342,12 +342,13 @@ class MortarTurret(BaseTurret):
     _max_hp: int = 90
     _aim_type = "high"
 
-    def __init__(self, parent, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Mortar(self, False)
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -359,12 +360,13 @@ class FlakTurret(BaseTurret):
     _max_hp: int = 70
     _aim_type = "low"
 
-    def __init__(self, parent, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Flak(self, True)
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -377,13 +379,15 @@ class FlakTurret(BaseTurret):
 class CRAMTurret(BaseTurret):
     _max_hp: int = 60
     _low_tof_multiplier = .93
+    _aim_type = "low"
 
-    def __init__(self, parent, position: Vec2) -> None:
-        weapon = CRAM(self, False)
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
+        weapon = CRAM(self, False)  # don't eject casings, because i like my pc
         weapon.reload(True)
 
         super().__init__(
-            parent,
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,

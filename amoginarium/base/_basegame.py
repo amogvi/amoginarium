@@ -27,11 +27,11 @@ from ..entities import CRAMTurret
 from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
+from ._linked import global_vars, Coalitions
 from ..logic import SimpleLock, Color, Vec2
 from ..render_bindings import renderer
 from ..communications import Server
 from ..animations import explosion
-from ._linked import global_vars
 from ._textures import textures
 
 
@@ -153,7 +153,7 @@ class BaseGame:
         load all textures n stuff
         """
         # load entity textures
-        textures.load_images("assets/images/textures")
+        textures.load_images("assets/images/textures.zip")
         textures.load_images("assets/images/bg3.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
@@ -237,7 +237,7 @@ class BaseGame:
                 )
                 continue
 
-            SPAWNABLES[entity["type"]](self, Vec2.from_cartesian(
+            SPAWNABLES[entity["type"]](Coalitions.red, Vec2.from_cartesian(
                 *entity["pos"]
             ))
 
@@ -421,7 +421,7 @@ class BaseGame:
 
             for new_controller in tmp:
                 # spawn new player
-                Player(controller=new_controller)
+                Player(coalition=Coalitions.blue, controller=new_controller)
                 ic(new_controller, Player)
 
         # update entities

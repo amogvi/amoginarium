@@ -30,6 +30,7 @@ def is_parent(parent: object, child: object) -> bool:
     return parent == child.parent
 
 
+# @run_with_debug(show_args=True)
 def is_related(a: object, b: object, depth: int = 2) -> bool:
     """
     check if either is parent or child or self
@@ -41,7 +42,7 @@ def is_related(a: object, b: object, depth: int = 2) -> bool:
     4: coalition
     """
     is_same = a == b
-    if depth == 1:
+    if depth <= 1:
         return is_same
 
     is_parented = False
@@ -56,25 +57,28 @@ def is_related(a: object, b: object, depth: int = 2) -> bool:
     except AttributeError:
         pass
 
-    if depth == 2:
+    if depth <= 2:
         return is_same or is_parented
 
     try:
         is_sibling = a.parent == b.parent
-        if depth == 3:
-            return is_same or is_parented or is_sibling
 
     except AttributeError:
-        return is_same or is_parented
+        is_sibling = False
+
+    if depth <= 3:
+        return is_same or is_parented or is_sibling
 
     try:
-        is_coalition = a.root == b.root
-
-        if depth == 4:
-            return is_same or is_parented or is_sibling or is_coalition
+        is_coalition = a.coalition == b.coalition
 
     except AttributeError:
-        return is_same or is_parented or is_sibling
+        is_coalition = False
+
+    if depth <= 4:
+        return is_same or is_parented or is_sibling or is_coalition
+
+    return False
 
 
 def convert_coord[A](

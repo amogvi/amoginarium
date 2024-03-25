@@ -45,6 +45,7 @@ class Bullet(ImageEntity):
     def __init__(
         self,
         parent: Entity,
+        coalition: tp.Any,
         initial_position: Vec2,
         initial_velocity: Vec2,
         base_damage: float = 1,
@@ -73,7 +74,8 @@ class Bullet(ImageEntity):
             texture_id=texture_id,
             size=size,
             initial_position=initial_position.copy(),
-            initial_velocity=initial_velocity.copy()
+            initial_velocity=initial_velocity.copy(),
+            coalition=coalition
         )
 
         self.add(GravityAffected)
@@ -232,6 +234,7 @@ class BaseWeapon:
         bullet_lifetime=2,
     ) -> None:
         self.parent = parent
+        self._coalition = parent.coalition
         self._mag_size = mag_size
         self._inacuracy = inaccuracy
         self._reload_time = reload_time
@@ -345,6 +348,7 @@ class BaseWeapon:
 
         Bullet(
             self.parent,
+            self._coalition,
             self.parent.position + Vec2.from_cartesian(0, 7)
             + direction.normalize() * self.parent.size.length * .45,
             direction.normalize() * self._bullet_speed + self.parent.velocity,
@@ -362,6 +366,7 @@ class BaseWeapon:
             casing_direction.x *= -.3
             Bullet(
                 self.parent,
+                self._coalition,
                 self.parent.position + Vec2.from_cartesian(0, 7)
                 + casing_direction * self.parent.size.length * .4,
                 casing_direction * 500 + self.parent.velocity,

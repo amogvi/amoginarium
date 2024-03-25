@@ -81,6 +81,7 @@ class Player(LRImageEntity):
 
     def __init__(
         self,
+        coalition,
         controller: Controller,
         facing: Vec2 = ...,
         initial_position: Vec2 = ...,
@@ -117,6 +118,7 @@ class Player(LRImageEntity):
             facing=facing,
             initial_position=initial_position,
             initial_velocity=initial_velocity,
+            coalition=coalition
         )
 
         self.add(
