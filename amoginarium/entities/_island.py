@@ -174,6 +174,7 @@ class Island(VisibleEntity):
 
         self._size = size
         self._form = form
+        self.mask: pg.Mask = ...
 
         if form is not ...:
             self._size = Vec2.from_cartesian(
@@ -220,6 +221,99 @@ class Island(VisibleEntity):
             self.position.y,
             self.size.x,
             self.size.y
+        )
+
+    def _generate_collision_mask(self) -> None:
+        """
+        generate the mask used for collision
+        """
+        if self._form is ...:
+            return super()._generate_collision_mask()
+
+        # collide sprite and rect
+        mask_surf = pg.Surface(self.size.xy, pg.SRCALPHA, 32)
+
+        n_rows = len(self._form)
+        n_columns = max(len(row) for row in self._form)
+        for row in range(n_rows):
+            row_offset = self._image_size[1] * row
+
+            for column in range(n_columns):
+                column_offset = self._image_size[0] * column
+
+                try:
+                    island_type = self._form[row][column]
+
+                except IndexError:
+                    island_type = -1
+
+                if island_type > 0:
+                    pg.draw.rect(
+                        mask_surf,
+                        (255, 255, 255, 255),
+                        (
+                            (column_offset, row_offset),
+                            self._image_size
+                        )
+                    )
+                else:
+                    pg.draw.rect(
+                        mask_surf,
+                        (0, 0, 0, 0),
+                        (
+                            (column_offset, row_offset),
+                            self._image_size
+                        )
+                    )
+
+        self.mask = pg.mask.from_surface(mask_surf)
+
+    def collide(self, other) -> tuple[int, int] | None:
+        """
+        more precise collision for islands
+        """
+        # if self._form is ...:
+        #     return pg.sprite.collide_mask(self, other)
+
+        return pg.sprite.collide_mask(self, other)
+
+    def get_collided_sides(
+            self,
+            top_collider: tuple[Vec2, pg.Mask],
+            right_collider: tuple[Vec2, pg.Mask],
+            bottom_collider: tuple[Vec2, pg.Mask],
+            left_collider: tuple[Vec2, pg.Mask],
+    ) -> tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]
+    ]:
+        """
+        check which sides of a sprite collide with the wall
+        """
+        top_offset = top_collider[0] - self.position
+        top_collides = (
+            self.mask.overlap(top_collider[1], top_offset.xy)
+        )
+
+        right_offset = right_collider[0] - self.position
+        right_collides = (
+            self.mask.overlap(right_collider[1], right_offset.xy)
+        )
+        
+        bottom_offset = bottom_collider[0] - self.position
+        bottom_collides = (
+            self.mask.overlap(bottom_collider[1], bottom_offset.xy)
+        )
+        
+        left_offset = left_collider[0] - self.position
+        left_collides = (
+            self.mask.overlap(left_collider[1], left_offset.xy)
+        )
+
+        return (
+            top_collides,
+            right_collides,
+            bottom_collides,
+            left_collides
         )
 
     def gl_draw(self) -> None:
@@ -308,83 +402,183 @@ class Island(VisibleEntity):
                 else:
                     match poly:
                         # single
-                        case _PolyMatcher(top=False, bottom=False, left=False, right=False):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=False,
+                            left=False,
+                            right=False
+                        ):
                             texture = self._island_single_texture
 
                         # dirt
-                        case _PolyMatcher(top=True, bottom=True, left=True, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._dirt_texture
 
                         # grass top
-                        case _PolyMatcher(top=False, bottom=True, left=True, right=True):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=True,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._island_middle_texture
 
                         # grass bottom
-                        case _PolyMatcher(top=True, bottom=False, left=True, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=False,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._island_middle_inv_texture
 
                         # left wall
-                        case _PolyMatcher(top=True, bottom=True, left=False, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=False,
+                            right=True
+                        ):
                             texture = self._island_wall_right_texture
 
                         # right wall
-                        case _PolyMatcher(top=True, bottom=True, left=True, right=False):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=True,
+                            right=False
+                        ):
                             texture = self._island_wall_left_texture
 
                         # top and bottom
-                        case _PolyMatcher(top=True, bottom=True, left=False, right=False):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=False,
+                            right=False
+                        ):
                             texture = self._island_top_bottom_texture
 
                         # left and right
-                        case _PolyMatcher(top=False, bottom=False, left=True, right=True):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=False,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._island_left_right_rexture
 
                         # bottom empty
-                        case _PolyMatcher(top=True, bottom=False, left=True, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=False,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._island_middle_inv_texture
 
                         # top empty
-                        case _PolyMatcher(top=False, bottom=True, left=True, right=True):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=True,
+                            left=True,
+                            right=True
+                        ):
                             texture = self._island_middle_texture
 
                         # left empty
-                        case _PolyMatcher(top=True, bottom=True, left=False, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=False,
+                            right=True
+                        ):
                             texture = self._island_wall_left_texture
 
                         # right empty
-                        case _PolyMatcher(top=True, bottom=True, left=True, right=False):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=True,
+                            left=True,
+                            right=False
+                        ):
                             texture = self._island_wall_right_texture
 
                         # right top corner
-                        case _PolyMatcher(top=False, bottom=True, left=True, right=False):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=True,
+                            left=True,
+                            right=False
+                        ):
                             texture = self._island_right_texture
 
                         # left top corner
-                        case _PolyMatcher(top=False, bottom=True, left=False, right=True):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=True,
+                            left=False,
+                            right=True
+                        ):
                             texture = self._island_left_texture
 
                         # right bottom corner
-                        case _PolyMatcher(top=True, bottom=False, left=True, right=False):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=False,
+                            left=True,
+                            right=False
+                        ):
                             texture = self._island_right_inv_texture
 
                         # left bottom corner
-                        case _PolyMatcher(top=True, bottom=False, left=False, right=True):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=False,
+                            left=False,
+                            right=True
+                        ):
                             texture = self._island_left_inv_texture
 
                         # top connected
-                        case _PolyMatcher(top=True, bottom=False, left=False, right=False):
+                        case _PolyMatcher(
+                            top=True,
+                            bottom=False,
+                            left=False,
+                            right=False
+                        ):
                             texture = self._island_single_bottom_texture
 
                         # bottom connected
-                        case _PolyMatcher(top=False, bottom=True, left=False, right=False):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=True,
+                            left=False,
+                            right=False
+                        ):
                             texture = self._island_single_top_texture
 
                         # left connected
-                        case _PolyMatcher(top=False, bottom=False, left=True, right=False):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=False,
+                            left=True,
+                            right=False
+                        ):
                             texture = self._island_single_left_texture
 
                         # right connected
-                        case _PolyMatcher(top=False, bottom=False, left=False, right=True):
+                        case _PolyMatcher(
+                            top=False,
+                            bottom=False,
+                            left=False,
+                            right=True
+                        ):
                             texture = self._island_single_right_texture
 
                         case _:

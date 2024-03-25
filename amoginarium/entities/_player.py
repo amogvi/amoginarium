@@ -8,6 +8,8 @@ Author:
 Nilusink
 """
 from time import perf_counter
+from icecream import ic
+import pygame as pg
 import typing as tp
 
 from ..base import GravityAffected, FrictionXAffected, HasBars
@@ -24,6 +26,10 @@ from ..logic import Vec2
 PLAYER_RIGHT_64_PATH = "gunogus64right"
 PLAYER_OOB_RIGHT_64_PATH = "amogusOOB64right"
 PLAYER_OOB_LEFT_64_PATH = "amogusOOB64left"
+
+
+PIXEL_MASK = pg.mask.Mask((1, 1), True)
+PIXEL_LINE_VERTICAL = pg.mask.Mask((1, 48), True)
 
 
 class Player(LRImageEntity):
@@ -92,6 +98,7 @@ class Player(LRImageEntity):
         self._hp = self._max_hp
 
         self._controller = controller
+        self._on_ground = False
 
         if initial_position is ...:
             initial_position = Players.spawn_point
@@ -150,17 +157,7 @@ class Player(LRImageEntity):
         if self._controller.joy_y < 0:
             return False
 
-        return WallCollider.on_ground(
-            self,
-            alt_pos=(
-                self.position.x,
-                self.position.y + (self.size.y / 2 - 10)
-            ),
-            alt_size=(
-                self.size.x / 4,
-                10
-            )
-        )
+        return self._on_ground
 
     @property
     def parent(self) -> tp.Self:
@@ -179,16 +176,71 @@ class Player(LRImageEntity):
         # update last hit
         self._last_hit = perf_counter()
 
+    def collide_wall(self, wall: Island):
+        return wall.get_collided_sides(
+            (
+                self.position + Vec2.from_cartesian(0, self.size.y / 2),
+                PIXEL_MASK
+            ),
+            (
+                self.position + Vec2.from_cartesian(
+                    self.size.y / 2, -24
+                ),
+                PIXEL_LINE_VERTICAL
+            ),
+            (
+                self.position - Vec2.from_cartesian(0, self.size.y / 2),
+                PIXEL_MASK
+            ),
+            (
+                self.position - Vec2.from_cartesian(
+                    self.size.y / 2, 24
+                ),
+                PIXEL_LINE_VERTICAL
+            ),
+        )
+
     def update(self, delta):
         # update reloads
         self.weapon.update(delta)
 
-        # stay onground if touching ground
-        on_ground = self.on_ground
-        if on_ground and self.velocity.y > 0:
-            self.acceleration.y = 0
-            self.velocity.y = 0
-            self.position.y = on_ground.position.y - (self.size.y / 2 - 10)
+        # stay on ground if touching ground
+        in_wall = WallCollider.collides_with(self)
+        self._on_ground = False
+        if in_wall:
+            wall, _ = in_wall
+            wall: Island
+
+            # check where the sprite touched the wall
+            on_top, on_right, on_bottom, on_left = self.collide_wall(wall)
+
+            # collide with walls
+            self._on_ground = on_top
+            if on_top and self.velocity.y >= 0:
+                self.acceleration.y = 0
+                self.velocity.y = 0
+                self.position.y -= 10
+
+                # check if +1 is over the floor
+                on_top, *_ = self.collide_wall(wall)
+                self.update_rect()
+                if not on_top:
+                    self.position.y += 10
+
+            if on_bottom and self.velocity.y <= 0:
+                self.acceleration.y = 0
+                self.velocity.y = 0
+                self.position.y += 1
+
+            if on_right and self.velocity.x >= 0:
+                self.acceleration.x = 0
+                self.velocity.x = 0
+                self.position.x -= 1
+
+            if on_left and self.velocity.x <= 0:
+                self.acceleration.x = 0
+                self.velocity.x = 0
+                self.position.x += 1
 
         # update controls
         self._controller.update(delta)
@@ -223,6 +275,14 @@ class Player(LRImageEntity):
 
         # run update from parent classes
         super().update(delta)
+
+    def update_rect(self) -> None:
+        self.rect = pg.Rect(
+            self.position.x - self.size.x / 4,
+            self.position.y - self.size.y / 2,
+            self.size.x / 2,
+            self.size.y
+        )
 
     def gl_draw(self) -> None:
         # check if out of bounds

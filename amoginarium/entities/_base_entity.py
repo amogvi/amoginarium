@@ -8,12 +8,12 @@ Author:
 Nilusink
 """
 from OpenGL.GL import glRotated
-# from icecream import ic
+from icecream import ic
 import pygame as pg
 import typing as tp
 import math as m
 
-
+# from ..base._linked import global_vars
 from ..render_bindings import renderer
 from ..base import Updated, Drawn
 from ..logic import Vec2
@@ -53,6 +53,7 @@ class Entity(pg.sprite.Sprite):
         super().__init__()
 
         self.update_rect()
+        self._generate_collision_mask()
         self.add(Updated)
 
     @property
@@ -90,6 +91,12 @@ class Entity(pg.sprite.Sprite):
     @property
     def coalition(self) -> tp.Any:
         return self._coalition
+
+    def _generate_collision_mask(self) -> None:
+        """
+        generate the mask used for precise collision
+        """
+        self.mask = pg.mask.Mask(self.size.xy, True)
 
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
@@ -183,12 +190,6 @@ class LRImageEntity(VisibleEntity):
     def gl_draw(self) -> None:
         renderer.draw_textured_quad(
             self._texture_right if self.facing.x < 0 else self._texture_left,
-            (
-                self.rect.x - Updated.world_position.x,
-                self.rect.y - Updated.world_position.y
-            ),
-            (
-                self.size.x,
-                self.size.y
-            )
+            self.world_position - self.size / 2,
+            self.size
         )
