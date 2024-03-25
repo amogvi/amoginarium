@@ -53,6 +53,7 @@ class Entity(pg.sprite.Sprite):
         super().__init__()
 
         self.update_rect()
+        self._generate_collision_mask()
         self.add(Updated)
 
     @property
@@ -90,6 +91,12 @@ class Entity(pg.sprite.Sprite):
     @property
     def coalition(self) -> tp.Any:
         return self._coalition
+
+    def _generate_collision_mask(self) -> None:
+        """
+        generate the mask used for precise collision
+        """
+        self.mask = pg.mask.Mask(self.size.xy, True)
 
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080

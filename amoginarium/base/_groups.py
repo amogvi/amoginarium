@@ -156,34 +156,16 @@ class _WallCollider(_BaseGroup):
     """
     @staticmethod
     def collides_with(
-            sprite,
-            alt_pos: coord_t = ...,
-            alt_size: coord_t = ...
+            sprite
     ) -> bool | pg.sprite.Sprite:
-        pos = sprite.position
-        size = sprite.size
-
-        if alt_pos is not ...:
-            pos = convert_coord(alt_pos, Vec2)
-
-        if alt_size is not ...:
-            size = convert_coord(alt_size, Vec2)
-
         for wall in Walls.sprites():
             sprite: tp.Any
             wall: tp.Any
 
-            if all([
-                wall.position.y
-                <= pos.y + size.y / 2,
-                pos.y - size.y / 2
-                <= wall.position.y + wall.size.y,
-                wall.position.x
-                <= pos.x + size.x / 4,
-                pos.x - size.x / 4
-                <= wall.position.x + wall.size.x
-            ]):
-                return wall
+            # use collide_rect first, because performance and stuff
+            if pg.sprite.collide_rect(wall, sprite):
+                if pg.sprite.collide_mask(wall, sprite):
+                    return wall
 
         return False
 
