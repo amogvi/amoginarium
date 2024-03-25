@@ -26,6 +26,25 @@ class _BaseGroup(pg.sprite.Group):
         for sprite in self.sprites():
             sprite.gl_draw()
 
+    @staticmethod
+    def entities_in_circle(
+        entities: list[pg.sprite.Sprite],
+        center: Vec2,
+        radius: float
+    ) -> list[tuple[float, tp.Any]]:
+        """
+        check which of the given entities are in the circle
+        """
+        out = []
+
+        for sprite in entities:
+            delta = sprite.position - center
+
+            if delta.length <= radius:
+                out.append((delta.length, sprite))
+
+        return sorted(out, key=lambda r: r[0])
+
     def get_entities_in_circle(
         self,
         center: Vec2,
@@ -34,15 +53,7 @@ class _BaseGroup(pg.sprite.Group):
         """
         get all entities inside a circle, sorted by distance (closest first)
         """
-        out = []
-
-        for sprite in self.sprites():
-            delta = sprite.position - center
-
-            if delta.length <= radius:
-                out.append((delta.length, sprite))
-
-        return sorted(out, key=lambda r: r[0])
+        return self.entities_in_circle(self.sprites(), center, radius)
 
 
 class _Bullets(_BaseGroup):

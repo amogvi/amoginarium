@@ -77,6 +77,13 @@ class Entity(pg.sprite.Sprite):
     def is_bullet(self) -> bool:
         return False
 
+    @property
+    def root(self):
+        """
+        get the root entity
+        """
+        return self._parent.root
+
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
 

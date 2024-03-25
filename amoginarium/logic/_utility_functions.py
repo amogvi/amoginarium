@@ -38,6 +38,7 @@ def is_related(a: object, b: object, depth: int = 2) -> bool:
     1: true if a == b
     2: true if a == b or parent
     3: true if all of the above or siblings
+    4: coalition
     """
     is_same = a == b
     if depth == 1:
@@ -58,8 +59,21 @@ def is_related(a: object, b: object, depth: int = 2) -> bool:
     if depth == 2:
         return is_same or is_parented
 
-    is_sibling = a == b
-    if depth == 2:
+    try:
+        is_sibling = a.parent == b.parent
+        if depth == 3:
+            return is_same or is_parented or is_sibling
+
+    except AttributeError:
+        return is_same or is_parented
+
+    try:
+        is_coalition = a.root == b.root
+
+        if depth == 4:
+            return is_same or is_parented or is_sibling or is_coalition
+
+    except AttributeError:
         return is_same or is_parented or is_sibling
 
 

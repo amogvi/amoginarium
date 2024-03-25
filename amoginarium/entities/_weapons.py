@@ -195,7 +195,7 @@ class Bullet(ImageEntity):
                 )
                 renderer.draw_circle(
                     self._target_pos,
-                    16,
+                    self.size.x * .5,
                     32,
                     Color.from_255(255, 100, 0, 220)
                 )
@@ -383,7 +383,7 @@ class Minigun(BaseWeapon):
         super().__init__(
             parent,
             reload_time=3,
-            recoil_time=.018,
+            recoil_time=.02,
             recoil_factor=2,
             mag_size=80,
             inaccuracy=.01093606,
@@ -461,4 +461,23 @@ class Flak(BaseWeapon):
             bullet_explosion_radius=100,
             bullet_explosion_damage=40,
             bullet_lifetime=5,
+        )
+
+
+class CRAM(BaseWeapon):
+    def __init__(self, parent, drop_casings: bool = False) -> None:
+        super().__init__(
+            parent,
+            reload_time=8,
+            recoil_time=.005,
+            recoil_factor=2,
+            mag_size=800,
+            inaccuracy=.001093606,
+            bullet_speed=3000,
+            bullet_damage=.1,
+            drop_casings=drop_casings,
+            bullet_size=9,
+            bullet_lifetime=1,
+            bullet_explosion_damage=.1,
+            bullet_explosion_radius=15
         )

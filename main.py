@@ -4,7 +4,7 @@ from amoginarium.base import BaseGame
 
 
 def main():
-    game = BaseGame(debug=True, show_targets=False)
+    game = BaseGame(debug=True, show_targets=True, time_multiplier=.5)
 
     # create initial controller
     KeyboardController()
@@ -14,5 +14,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# TODO: bullet interception shitty
