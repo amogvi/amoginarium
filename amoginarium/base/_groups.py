@@ -157,15 +157,16 @@ class _WallCollider(_BaseGroup):
     @staticmethod
     def collides_with(
             sprite
-    ) -> bool | pg.sprite.Sprite:
+    ) -> bool | tuple[pg.sprite.Sprite, tuple[int, int]]:
         for wall in Walls.sprites():
             sprite: tp.Any
             wall: tp.Any
 
             # use collide_rect first, because performance and stuff
             if pg.sprite.collide_rect(wall, sprite):
-                if pg.sprite.collide_mask(wall, sprite):
-                    return wall
+                pos = wall.collide(sprite)
+                if pos is not None:
+                    return wall, pos
 
         return False
 

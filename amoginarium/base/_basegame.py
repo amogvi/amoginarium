@@ -30,6 +30,7 @@ from ._scrolling_background import ParalaxBackground
 from ._linked import global_vars, Coalitions
 from ..logic import SimpleLock, Color, Vec2
 from ..render_bindings import renderer
+from ..audio import BackgroundPlayer
 from ..communications import Server
 from ..animations import explosion
 from ._textures import textures
@@ -80,6 +81,7 @@ class BaseGame:
     ) -> None:
         global_vars.show_targets = show_targets
         self.time_multiplier = time_multiplier
+        self._shifting = False
 
         # configure icecream
         if not debug:
@@ -119,10 +121,13 @@ class BaseGame:
 
         # initialize pygame (logic) and renderer
         pg.init()
+        pg.mixer.init()
         renderer.init("amoginarium")
 
         # initialize background
         self._background = ...
+        self._background_player = BackgroundPlayer()
+        self._background_player.volume = .3
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -152,6 +157,11 @@ class BaseGame:
         """
         load all textures n stuff
         """
+        # load sounds
+        self._background_player.load_files([
+            "assets/audio/background/amoginarium_music_v4.mp3"
+        ])
+
         # load entity textures
         textures.load_images("assets/images/textures.zip")
         textures.load_images("assets/images/bg3.zip")
@@ -256,8 +266,8 @@ class BaseGame:
         t1, t2 = str(t_ms).split(".")
         return f"{t1: >4}.{t2: <4} |> "
 
+    @staticmethod
     def run_in_next_loop[**A, R](
-            self,
             func: tp.Callable[A, R],
             *args: A.args,
             **kwargs: A.kwargs
@@ -314,6 +324,9 @@ class BaseGame:
                         joy = pg.joystick.Joystick(event.device_index)
                         GameController(joy.get_guid(), joy)
 
+            # update background music
+            self._background_player.update()
+
             # clear screen
             glClearColor(0, 0, 0, 1)
             # self.screen.fill((0, 0, 0, 0))
@@ -322,17 +335,31 @@ class BaseGame:
 
             min_player_pos, max_player_pos = Players.get_position_extremes()
 
-            background_pos_right = self._background.position\
-                + global_vars.screen_size.x - 60
-            background_pos_left = self._background.position + 60
+            # background_pos_left = self._background.position + 60
 
-            if max_player_pos.x > background_pos_right:
-                self._background.scroll(delta * 15)
-                Updated.world_position.x = self._background.position
+            if self._shifting:
+                background_pos_right = self._background.position \
+                                       + global_vars.screen_size.x - 1400
 
-            elif min_player_pos.x < background_pos_left:
-                self._background.scroll(-delta * 15)
-                Updated.world_position.x = self._background.position
+                if max_player_pos.x > background_pos_right:
+                    self._background.scroll(delta * 3)
+                    Updated.world_position.x = self._background.position
+
+                else:
+                    self._shifting = False
+
+            else:
+                background_pos_right = self._background.position \
+                                       + global_vars.screen_size.x - 500
+
+                if max_player_pos.x > background_pos_right:
+                    self._background.scroll(delta * 3)
+                    Updated.world_position.x = self._background.position
+                    self._shifting = True
+
+            # elif min_player_pos.x < background_pos_left:
+            #     self._background.scroll(-delta * 15)
+            #     Updated.world_position.x = self._background.position
 
             # draw background
             self._background.draw()
