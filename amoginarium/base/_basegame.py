@@ -23,6 +23,7 @@ from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
 from ..entities import Player, Island, Bullet, BaseTurret, FlakTurret
+from ..entities import CRAMTurret
 from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
@@ -51,6 +52,7 @@ SPAWNABLES: dict[str, BaseTurret] = {
     "turret.static.minigun": MinigunTurret,
     "turret.static.mortar": MortarTurret,
     "turret.static.flak": FlakTurret,
+    "turret.static.cram": CRAMTurret,
 }
 
 
@@ -73,9 +75,11 @@ class BaseGame:
             self,
             debug: bool = False,
             game_port: int = 12345,
-            show_targets: bool = False
+            show_targets: bool = False,
+            time_multiplier: float = 1
     ) -> None:
         global_vars.show_targets = show_targets
+        self.time_multiplier = time_multiplier
 
         # configure icecream
         if not debug:
@@ -149,7 +153,7 @@ class BaseGame:
         load all textures n stuff
         """
         # load entity textures
-        textures.load_images("assets/images/textures.zip")
+        textures.load_images("assets/images/textures")
         textures.load_images("assets/images/bg3.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
@@ -163,6 +167,10 @@ class BaseGame:
     @property
     def id(self) -> int:
         return -1
+
+    @property
+    def root(self) -> tp.Self:
+        return self
 
     def load_map(self, map_path: tp.LiteralString) -> None:
         """
@@ -202,11 +210,23 @@ class BaseGame:
 
         # load islands
         for island in data["platforms"]:
-            Island(
-                Vec2.from_cartesian(*island["pos"]),
-                Vec2.from_cartesian(*island["size"]),
-                island["texture"]
-            )
+            if "size" in island:
+                Island(
+                    Vec2.from_cartesian(*island["pos"]),
+                    size=Vec2.from_cartesian(*island["size"]),
+                )
+
+            elif "form" in island:
+                Island(
+                    Vec2.from_cartesian(*island["pos"]),
+                    form=island["form"],
+                )
+
+            else:
+                print_ic_style(
+                    f"{CC.fg.RED}invalid island: "
+                    f"{CC.fg.YELLOW}{island}"
+                )
 
         # load entities
         for entity in data["entities"]:
@@ -217,7 +237,7 @@ class BaseGame:
                 )
                 continue
 
-            SPAWNABLES[entity["type"]](Vec2.from_cartesian(
+            SPAWNABLES[entity["type"]](self, Vec2.from_cartesian(
                 *entity["pos"]
             ))
 
@@ -270,7 +290,7 @@ class BaseGame:
             now = perf_counter()
             delta = now-last
 
-            # delta *= .1  # slow-motion
+            delta *= self.time_multiplier  # slow-motion
 
             # update logic
             self._update_logic(delta, now)

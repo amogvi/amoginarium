@@ -7,6 +7,7 @@ an island in the sky
 Author:
 Nilusink
 """
+from icecream import ic
 import pygame as pg
 import typing as tp
 import math as m
@@ -17,6 +18,20 @@ from ..base._textures import textures
 from ..entities import VisibleEntity
 from ..base import Walls
 from ..logic import Vec2
+
+
+class _PolyMatcher:
+    def __init__(self, top, bottom, left, right) -> None:
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
+
+    def __str__(self) -> str:
+        return f"[{self.top}, {self.bottom}, {self.left}, {self.right}]"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class Island(VisibleEntity):
@@ -32,6 +47,9 @@ class Island(VisibleEntity):
 
     _island_middle_texture: int = ...
     _island_middle_inv_texture: int = ...
+
+    _island_top_bottom_texture: int = ...
+    _island_left_right_rexture: int = ...
 
     _island_right_texture: int = ...
     _island_right_inv_texture: int = ...
@@ -100,6 +118,17 @@ class Island(VisibleEntity):
             mirror="x"
         )
 
+        cls._island_top_bottom_texture, _ = textures.get_texture(
+            "grass_top_bottom",
+            cls._image_size,
+            mirror="x"
+        )
+        cls._island_left_right_rexture, _ = textures.get_texture(
+            "grass_left_right",
+            cls._image_size,
+            mirror="x"
+        )
+
         cls._island_right_texture, _ = textures.get_texture(
             "grass_right",
             cls._image_size,
@@ -136,18 +165,31 @@ class Island(VisibleEntity):
     def __init__(
             self,
             start: Vec2,
-            size: Vec2,
+            size: Vec2 = ...,
+            form: list[list[int]] = ...,
             texture: str = ...
     ) -> None:
-        self._size = size.copy()
+        if size is ... and form is ...:
+            raise ValueError("either size or form have to be given!")
+
+        self._size = size
+        self._form = form
+
+        if form is not ...:
+            self._size = Vec2.from_cartesian(
+                64 * max(len(row) for row in self._form),
+                64 * len(self._form)
+            )
+
         self._texture = texture
 
         super().__init__(
-            size=size,
+            size=self._size,
             initial_position=start
         )
 
         self.add(Walls)
+        self.update_rect()
 
     @classmethod
     def random_between(
@@ -184,61 +226,172 @@ class Island(VisibleEntity):
         start_pos = self.world_position
 
         # fill island with dirt
-        n_rows = m.ceil(self.size.y / self._image_size[1])
-        n_columns = m.ceil(self.size.x / self._image_size[0])
+        if self._form is ...:
+            n_rows = m.ceil(self.size.y / self._image_size[1])
+            n_columns = m.ceil(self.size.x / self._image_size[0])
+
+        else:
+            n_rows = len(self._form)
+            n_columns = max(len(row) for row in self._form)
+
         for row in range(n_rows):
             row_offset = self._image_size[1] * row
 
             for column in range(n_columns):
                 texture = self._dirt_texture
 
+                # check adjesant blocks
+                block_top = 0
+                block_bottom = 0
+                block_left = 0
+                block_right = 0
+
+                if self._form is not ...:
+                    if row > 0:
+                        try:
+                            block_top = self._form[row-1][column]
+
+                        except IndexError:
+                            block_top = 0
+
+                    if row < n_rows - 1:
+                        try:
+                            block_bottom = self._form[row+1][column]
+
+                        except IndexError:
+                            block_left = 0
+
+                    if column > 0:
+                        try:
+                            block_left = self._form[row][column-1]
+
+                        except IndexError:
+                            block_left = 0
+
+                    if column < n_columns - 1:
+                        try:
+                            block_right = self._form[row][column+1]
+
+                        except IndexError:
+                            block_right = 0
+
+                else:
+                    block_top = row != 0
+                    block_bottom = row != n_rows - 1
+                    block_left = column != 0
+                    block_right = column != n_columns - 1
+
+                island_type = -1
+                if self._form is not ...:
+                    try:
+                        island_type = self._form[row][column]
+
+                    except IndexError:
+                        continue
+
                 # corners
-                if n_rows == n_columns == 1:
-                    texture = self._island_single_texture
+                poly = _PolyMatcher(
+                    top=block_top in (1, 2),
+                    bottom=block_bottom in (1, 2),
+                    left=block_left in (1, 2),
+                    right=block_right in (1, 2)
+                )
 
-                elif column == 0:
-                    if n_rows == 1:
-                        texture = self._island_single_right_texture
+                # empty
+                if island_type == 0:
+                    continue
 
-                    elif row == 0:
-                        texture = self._island_left_texture
+                # hole
+                elif island_type == 2:
+                    texture = self._dirt_hole_texture
 
-                        if n_columns == 1:
-                            texture = self._island_single_top_texture
+                else:
+                    match poly:
+                        # single
+                        case _PolyMatcher(top=False, bottom=False, left=False, right=False):
+                            texture = self._island_single_texture
 
-                    elif row == n_rows - 1:
-                        texture = self._island_left_inv_texture
+                        # dirt
+                        case _PolyMatcher(top=True, bottom=True, left=True, right=True):
+                            texture = self._dirt_texture
 
-                        if n_columns == 1:
+                        # grass top
+                        case _PolyMatcher(top=False, bottom=True, left=True, right=True):
+                            texture = self._island_middle_texture
+
+                        # grass bottom
+                        case _PolyMatcher(top=True, bottom=False, left=True, right=True):
+                            texture = self._island_middle_inv_texture
+
+                        # left wall
+                        case _PolyMatcher(top=True, bottom=True, left=False, right=True):
+                            texture = self._island_wall_right_texture
+
+                        # right wall
+                        case _PolyMatcher(top=True, bottom=True, left=True, right=False):
+                            texture = self._island_wall_left_texture
+
+                        # top and bottom
+                        case _PolyMatcher(top=True, bottom=True, left=False, right=False):
+                            texture = self._island_top_bottom_texture
+
+                        # left and right
+                        case _PolyMatcher(top=False, bottom=False, left=True, right=True):
+                            texture = self._island_left_right_rexture
+
+                        # bottom empty
+                        case _PolyMatcher(top=True, bottom=False, left=True, right=True):
+                            texture = self._island_middle_inv_texture
+
+                        # top empty
+                        case _PolyMatcher(top=False, bottom=True, left=True, right=True):
+                            texture = self._island_middle_texture
+
+                        # left empty
+                        case _PolyMatcher(top=True, bottom=True, left=False, right=True):
+                            texture = self._island_wall_left_texture
+
+                        # right empty
+                        case _PolyMatcher(top=True, bottom=True, left=True, right=False):
+                            texture = self._island_wall_right_texture
+
+                        # right top corner
+                        case _PolyMatcher(top=False, bottom=True, left=True, right=False):
+                            texture = self._island_right_texture
+
+                        # left top corner
+                        case _PolyMatcher(top=False, bottom=True, left=False, right=True):
+                            texture = self._island_left_texture
+
+                        # right bottom corner
+                        case _PolyMatcher(top=True, bottom=False, left=True, right=False):
+                            texture = self._island_right_inv_texture
+
+                        # left bottom corner
+                        case _PolyMatcher(top=True, bottom=False, left=False, right=True):
+                            texture = self._island_left_inv_texture
+
+                        # top connected
+                        case _PolyMatcher(top=True, bottom=False, left=False, right=False):
                             texture = self._island_single_bottom_texture
 
-                    else:
-                        texture = self._island_wall_right_texture
+                        # bottom connected
+                        case _PolyMatcher(top=False, bottom=True, left=False, right=False):
+                            texture = self._island_single_top_texture
 
-                elif column == n_columns - 1:
-                    if n_rows == 1:
-                        texture = self._island_single_left_texture
+                        # left connected
+                        case _PolyMatcher(top=False, bottom=False, left=True, right=False):
+                            texture = self._island_single_left_texture
 
-                    elif row == 0:
-                        texture = self._island_right_texture
+                        # right connected
+                        case _PolyMatcher(top=False, bottom=False, left=False, right=True):
+                            texture = self._island_single_right_texture
 
-                    elif row == n_rows - 1:
-                        texture = self._island_right_inv_texture
-
-                    else:
-                        texture = self._island_wall_left_texture
-
-                # center pieces
-                elif row == 0:
-                    texture = self._island_middle_texture
-
-                elif row == n_rows - 1:
-                    texture = self._island_middle_inv_texture
-
-                # else:
-                #     # random holes
-                #     if random.randint(0, 20) == 13:
-                #         texture = self._dirt_hole_texture
+                        case _:
+                            raise ValueError(
+                                "idek how you got here",
+                                poly
+                            )
 
                 column_offset = self._image_size[0] * column
                 pos = start_pos + Vec2.from_cartesian(

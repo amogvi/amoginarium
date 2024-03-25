@@ -5,8 +5,11 @@
     "platforms": [
         {
             "pos": [0, 800],
-            "size": [1024, 128],
-            "texture": "path/to/texture.png"
+            "form": [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+                [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+            ]
         },
         {
             "pos": [1600, 850],
@@ -20,13 +23,19 @@
         },
         {
             "pos": [500, 550],
-            "size": [64, 128],
-            "texture": "path/to/texture.png"
+            "form": [
+                [1, 1, 1],
+                [1, 0]
+            ]
         }
     ],
     "entities": [
         {
             "type": "turret.static.flak",
+            "pos": [1850, 100]
+        },
+        {
+            "type": "turret.static.cram",
             "pos": [1850, 800]
         }
     ]
