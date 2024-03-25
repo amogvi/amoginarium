@@ -45,6 +45,7 @@ class Bullet(ImageEntity):
     def __init__(
         self,
         parent: Entity,
+        coalition: tp.Any,
         initial_position: Vec2,
         initial_velocity: Vec2,
         base_damage: float = 1,
@@ -73,7 +74,8 @@ class Bullet(ImageEntity):
             texture_id=texture_id,
             size=size,
             initial_position=initial_position.copy(),
-            initial_velocity=initial_velocity.copy()
+            initial_velocity=initial_velocity.copy(),
+            coalition=coalition
         )
 
         self.add(GravityAffected)
@@ -195,7 +197,7 @@ class Bullet(ImageEntity):
                 )
                 renderer.draw_circle(
                     self._target_pos,
-                    16,
+                    self.size.x * .5,
                     32,
                     Color.from_255(255, 100, 0, 220)
                 )
@@ -232,6 +234,7 @@ class BaseWeapon:
         bullet_lifetime=2,
     ) -> None:
         self.parent = parent
+        self._coalition = parent.coalition
         self._mag_size = mag_size
         self._inacuracy = inaccuracy
         self._reload_time = reload_time
@@ -345,6 +348,7 @@ class BaseWeapon:
 
         Bullet(
             self.parent,
+            self._coalition,
             self.parent.position + Vec2.from_cartesian(0, 7)
             + direction.normalize() * self.parent.size.length * .45,
             direction.normalize() * self._bullet_speed + self.parent.velocity,
@@ -362,6 +366,7 @@ class BaseWeapon:
             casing_direction.x *= -.3
             Bullet(
                 self.parent,
+                self._coalition,
                 self.parent.position + Vec2.from_cartesian(0, 7)
                 + casing_direction * self.parent.size.length * .4,
                 casing_direction * 500 + self.parent.velocity,
@@ -383,7 +388,7 @@ class Minigun(BaseWeapon):
         super().__init__(
             parent,
             reload_time=3,
-            recoil_time=.018,
+            recoil_time=.02,
             recoil_factor=2,
             mag_size=80,
             inaccuracy=.01093606,
@@ -461,4 +466,23 @@ class Flak(BaseWeapon):
             bullet_explosion_radius=100,
             bullet_explosion_damage=40,
             bullet_lifetime=5,
+        )
+
+
+class CRAM(BaseWeapon):
+    def __init__(self, parent, drop_casings: bool = False) -> None:
+        super().__init__(
+            parent,
+            reload_time=8,
+            recoil_time=.005,
+            recoil_factor=2,
+            mag_size=800,
+            inaccuracy=.001093606,
+            bullet_speed=3000,
+            bullet_damage=.1,
+            drop_casings=drop_casings,
+            bullet_size=9,
+            bullet_lifetime=1,
+            bullet_explosion_damage=.1,
+            bullet_explosion_radius=15
         )

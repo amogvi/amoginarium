@@ -9,11 +9,18 @@ Nilusink
 """
 from ..debugging import get_caller_name, print_ic_style, CC
 from ..logic import Vec2
+from enum import Enum
 import typing as tp
 
 
 # idk how to do this with the pythin 3.12 typehinting
 _A = tp.TypeVar("_A", int, float, Vec2)
+
+
+class Coalitions(Enum):
+    neutral = 0
+    blue = 1
+    red = 2
 
 
 class BoundFunction(tp.TypedDict):

@@ -7,6 +7,8 @@ all controller types should inherit from this
 Author:
 Nilusink
 """
+raise DeprecationWarning("map editor hasn't been updated yet!")
+
 from pginter.types import Color, StringVar
 from PIL.Image import open as iopen
 from threading import Thread  # for opening files without disrupting pginter

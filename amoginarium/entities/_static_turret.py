@@ -11,14 +11,15 @@ from contextlib import suppress
 # from icecream import ic
 import typing as tp
 
-from ..base import HasBars, CollisionDestroyed, Players, Updated
+from ..base import HasBars, CollisionDestroyed, Players, Updated, Bullets
 from ..base import GravityAffected
-from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar, Flak
+from ._weapons import BaseWeapon, Sniper, Ak47, Minigun, Mortar, Flak, CRAM
 from ..logic import Vec2, calculate_launch_angle, Color, is_related
 from ._base_entity import VisibleEntity
 from ..render_bindings import renderer
 from ..base._linked import global_vars
 from ..base._textures import textures
+from ..base._linked import Coalitions
 
 
 class BaseTurret(VisibleEntity):
@@ -35,6 +36,8 @@ class BaseTurret(VisibleEntity):
     _target: tp.Any = ...
     _target_predict: Vec2 = ...
     available_targets: dict = ...
+    _high_tof_multiplier: float = 1.1
+    _low_tof_multiplier: float = 1
 
     def __new__(cls, *args, **kwargs):
         # only load texture once
@@ -53,24 +56,28 @@ class BaseTurret(VisibleEntity):
 
     def __init__(
         self,
+        coalition: Coalitions,
         size: Vec2,
         position: Vec2,
         weapon: BaseWeapon,
         engagement_range: float,
         airburst_munition: bool = False,
-        intercept_bullets: bool = False
+        intercept_bullets: bool = False,
+        intercept_players: bool = True
     ) -> None:
         self.weapon = weapon
         self.engagement_range = engagement_range
         self.airburst_munition = airburst_munition
         self.intercept_bullets = intercept_bullets
+        self.intercept_players = intercept_players
         self.available_targets = {}
 
         self._hp = self._max_hp
 
         super().__init__(
             size=size,
-            initial_position=position
+            initial_position=position,
+            coalition=coalition
         )
 
         self.add(CollisionDestroyed, HasBars)
@@ -118,15 +125,21 @@ class BaseTurret(VisibleEntity):
         self.weapon.update(delta)
 
         # scan for targets and engage the closest one
-        targets = (
-            CollisionDestroyed if self.intercept_bullets else Players
-        ).get_entities_in_circle(
+        targets = []
+        if self.intercept_players:
+            targets.extend(Players.sprites())
+
+        if self.intercept_bullets:
+            targets.extend(Bullets.sprites())
+
+        targets = Players.entities_in_circle(
+            targets,
             self.position,
             self.engagement_range
         )
 
         # filter stuff shot by myself
-        targets = [e for e in targets if not is_related(self, e[1])]
+        targets = [e for e in targets if not is_related(self, e[1], depth=4)]
         # targets = []
 
         for target in targets:
@@ -195,12 +208,12 @@ class BaseTurret(VisibleEntity):
                     predict.x *= -1
 
                 self._target_predict = self.position + predict
-
                 # if airburst, explode at max engagement range
                 # idk why, but if engaging bullets, the tof is wrong and
                 # x1.1 corrects it soemehow
                 tof = min(
-                    tof * 1.1 if magic else tof,
+                    tof * self._high_tof_multiplier if magic else
+                    tof * self._low_tof_multiplier,
                     self.engagement_range / self.weapon.bullet_speed
                 )
 
@@ -212,7 +225,7 @@ class BaseTurret(VisibleEntity):
 
                 if shot:
                     self.available_targets[new_target]["shot_at"] = \
-                        self.weapon._reload_time
+                        self.weapon._reload_time - .01
 
         else:
             self._target = ...
@@ -277,11 +290,13 @@ class BaseTurret(VisibleEntity):
 class SniperTurret(BaseTurret):
     _max_hp: int = 40
 
-    def __init__(self, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Sniper(self, True)
         weapon.reload(True)
 
         super().__init__(
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -292,11 +307,13 @@ class SniperTurret(BaseTurret):
 class AkTurret(BaseTurret):
     _max_hp: int = 60
 
-    def __init__(self, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Ak47(self, False)
         weapon.reload(True)
 
         super().__init__(
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -307,11 +324,13 @@ class AkTurret(BaseTurret):
 class MinigunTurret(BaseTurret):
     _max_hp: int = 60
 
-    def __init__(self, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Minigun(self, False)
         weapon.reload(True)
 
         super().__init__(
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -323,11 +342,13 @@ class MortarTurret(BaseTurret):
     _max_hp: int = 90
     _aim_type = "high"
 
-    def __init__(self, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Mortar(self, False)
         weapon.reload(True)
 
         super().__init__(
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -339,11 +360,13 @@ class FlakTurret(BaseTurret):
     _max_hp: int = 70
     _aim_type = "low"
 
-    def __init__(self, position: Vec2) -> None:
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
         weapon = Flak(self, True)
         weapon.reload(True)
 
         super().__init__(
+            coalition,
             Vec2.from_cartesian(64, 64),
             position,
             weapon,
@@ -351,3 +374,27 @@ class FlakTurret(BaseTurret):
             airburst_munition=True,
             intercept_bullets=False
         )
+
+
+class CRAMTurret(BaseTurret):
+    _max_hp: int = 60
+    _low_tof_multiplier = .93
+    _aim_type = "low"
+
+    def __init__(self, coalition: Coalitions, position: Vec2) -> None:
+        self._coalition = coalition  # needed becauuse the weapon wants it
+        weapon = CRAM(self, False)  # don't eject casings, because i like my pc
+        weapon.reload(True)
+
+        super().__init__(
+            coalition,
+            Vec2.from_cartesian(64, 64),
+            position,
+            weapon,
+            1200,
+            intercept_bullets=True,
+            intercept_players=False,
+            airburst_munition=True,
+        )
+
+        self._tof_multilier = .2

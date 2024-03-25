@@ -33,13 +33,16 @@ class Entity(pg.sprite.Sprite):
         size: Vec2 = ...,
         facing: Vec2 = ...,
         initial_position: Vec2 = ...,
-        initial_velocity: Vec2 = ...
+        initial_velocity: Vec2 = ...,
+        coalition: tp.Any = ...
     ) -> None:
         global _next_entity_id
 
         # assign unique id
         self.__id = _next_entity_id
         _next_entity_id += 1
+
+        self._coalition = coalition
 
         self.size = Vec2.from_cartesian(1, 1) if size is ... else size
         self.facing = Vec2.from_cartesian(1, 0) if facing is ... else facing
@@ -76,6 +79,17 @@ class Entity(pg.sprite.Sprite):
     @property
     def is_bullet(self) -> bool:
         return False
+
+    @property
+    def root(self):
+        """
+        get the root entity
+        """
+        return self._parent.root
+
+    @property
+    def coalition(self) -> tp.Any:
+        return self._coalition
 
     def on_ground(self) -> bool:
         return self.position.y + self.size.y > 1080
