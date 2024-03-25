@@ -174,7 +174,7 @@ class Island(VisibleEntity):
 
         self._size = size
         self._form = form
-        self.mask = ...
+        self.mask: pg.Mask = ...
 
         if form is not ...:
             self._size = Vec2.from_cartesian(
@@ -268,14 +268,53 @@ class Island(VisibleEntity):
 
         self.mask = pg.mask.from_surface(mask_surf)
 
-    def collide(self, other) -> None:
+    def collide(self, other) -> tuple[int, int] | None:
         """
         more precise collision for islands
         """
-        if self._form is ...:
-            return pg.sprite.collide_mask(self, other)
+        # if self._form is ...:
+        #     return pg.sprite.collide_mask(self, other)
 
         return pg.sprite.collide_mask(self, other)
+
+    def get_collided_sides(
+            self,
+            top_collider: tuple[Vec2, pg.Mask],
+            right_collider: tuple[Vec2, pg.Mask],
+            bottom_collider: tuple[Vec2, pg.Mask],
+            left_collider: tuple[Vec2, pg.Mask],
+    ) -> tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]
+    ]:
+        """
+        check which sides of a sprite collide with the wall
+        """
+        top_offset = top_collider[0] - self.position
+        top_collides = (
+            self.mask.overlap(top_collider[1], top_offset.xy)
+        )
+
+        right_offset = right_collider[0] - self.position
+        right_collides = (
+            self.mask.overlap(right_collider[1], right_offset.xy)
+        )
+        
+        bottom_offset = bottom_collider[0] - self.position
+        bottom_collides = (
+            self.mask.overlap(bottom_collider[1], bottom_offset.xy)
+        )
+        
+        left_offset = left_collider[0] - self.position
+        left_collides = (
+            self.mask.overlap(left_collider[1], left_offset.xy)
+        )
+
+        return (
+            top_collides,
+            right_collides,
+            bottom_collides,
+            left_collides
+        )
 
     def gl_draw(self) -> None:
         start_pos = self.world_position

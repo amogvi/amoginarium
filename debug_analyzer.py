@@ -57,7 +57,7 @@ for n_bullet, loop_time in zip(n_bullets, bullets_ys):
 av_bullet_ys: list[float] = [None] * (max(n_bullets) + 1)
 av_bullet_xs = list(range(len(av_bullet_ys)))
 for n_bullet in range(len(av_bullets_ys_tmp)):
-    times = av_bullets_ys_tmp[n_bullet]
+    times: list[float] | None = av_bullets_ys_tmp[n_bullet]
 
     if times is None:
         av_bullet_xs[n_bullet] = None
