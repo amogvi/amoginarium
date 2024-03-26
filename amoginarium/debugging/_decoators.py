@@ -34,10 +34,10 @@ def run_with_debug(
             prefix_time = prefix[:-3]
             prefix_arrow = prefix[-3:]
 
-            func_name = terminal_link(
-                inspect.getfile(func),
-                func.__name__
-            )
+            func_name = func.__name__  # terminal_link(
+            #     inspect.getfile(func),
+            #     func.__name__
+            # )
 
             if ic.enabled and show_call:
                 print(
