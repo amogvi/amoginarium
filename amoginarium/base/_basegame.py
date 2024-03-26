@@ -35,6 +35,7 @@ from ..audio import BackgroundPlayer
 from ..communications import Server
 from ..animations import explosion
 from ._textures import textures
+from ..ui import Button
 
 
 class BoundFunction(tp.TypedDict):
@@ -150,7 +151,6 @@ class BaseGame:
 
         # load map
         self.preload()
-        self.load_map("assets/maps/test.json")
 
         self._game_start = 0
 
@@ -252,9 +252,10 @@ class BaseGame:
                 )
                 continue
 
-            SPAWNABLES[entity["type"]](Coalitions.red, Vec2.from_cartesian(
-                *entity["pos"]
-            ))
+            SPAWNABLES[entity["type"]](
+                Coalitions.red,
+                Vec2.from_cartesian(*entity["pos"])
+            )
 
     def time_since_start(self) -> str:
         """
@@ -291,6 +292,17 @@ class BaseGame:
         self._new_controllers.append(controller)
         self._new_controllers_lock.release()
 
+    def handle_events(self) -> None:
+        for event in pg.event.get():
+            match event.type:
+                case pg.QUIT:
+                    ic("pygame end")
+                    return self.end()
+
+                case pg.JOYDEVICEADDED:
+                    joy = pg.joystick.Joystick(event.device_index)
+                    GameController(joy.get_guid(), joy)
+
     def _run_pygame(self) -> None:
         """
         start pygame
@@ -299,6 +311,25 @@ class BaseGame:
         last_fps_print = 0
         clock = pg.time.Clock()
 
+        in_menu: bool = True
+        self.load_map("assets/maps/test.json")
+
+        def start_game():
+            nonlocal in_menu
+            self._background.reset_scroll()
+            in_menu = False
+
+        widgets = [
+            Button(
+                (760, 390),
+                (400, 150),
+                "Start",
+                Color.from_255(100, 100, 100),
+                start_game,
+                20
+            )
+        ]
+
         # draw background once
         while self.running:
             # total delta since last call
@@ -306,6 +337,25 @@ class BaseGame:
             delta = now-last
 
             delta *= self.time_multiplier  # slow-motion
+
+            if in_menu:
+                self.handle_events()
+
+                # update background music
+                self._background_player.update()
+
+                self._background.scroll(delta / 200)
+                self._background.draw(delta)
+
+                for widget in widgets:
+                    widget.gl_draw()
+
+                pg.display.flip()
+                clock.tick(global_vars.max_fps)
+
+                self._game_start = perf_counter()
+                last = now
+                continue
 
             # update logic
             self._update_logic(delta, now)
@@ -319,15 +369,7 @@ class BaseGame:
                 last_fps_print = now
 
             # handle events
-            for event in pg.event.get():
-                match event.type:
-                    case pg.QUIT:
-                        ic("pygame end")
-                        return self.end()
-
-                    case pg.JOYDEVICEADDED:
-                        joy = pg.joystick.Joystick(event.device_index)
-                        GameController(joy.get_guid(), joy)
+            self.handle_events()
 
             # update background music
             self._background_player.update()

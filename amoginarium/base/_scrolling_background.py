@@ -101,6 +101,10 @@ class ParalaxBackground:
         if self._position-value <= 0:
             self._position -= value
 
+    def reset_scroll(self) -> None:
+        self._animation_counter = 0
+        self._position = 0
+
     def draw(self, delta: float) -> None:
         """
         draw background to surface

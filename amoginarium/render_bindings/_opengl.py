@@ -23,6 +23,7 @@ from icecream import ic
 from PIL import Image
 import pygame as pg
 import numpy as np
+import math as m
 
 from ..logic import Vec2, Color, convert_coord
 from ._base_renderer import BaseRenderer, tColor
@@ -296,3 +297,72 @@ class OpenGLRenderer(BaseRenderer):
         glVertex2f(*start.xy)
         glVertex2f(*end.xy)
         glEnd()
+
+    def draw_rounded_rect(
+            self,
+            start,
+            size,
+            color,
+            radius,
+    ) -> None:
+        start = convert_coord(start, Vec2)
+        size = convert_coord(size, Vec2)
+
+        # circles at edges
+        self.draw_circle(
+            start + radius,
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            start + size - radius,
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            (
+                start.x + size.x - radius,
+                start.y + radius
+            ),
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            (
+                start.x + radius,
+                start.y + size.y - radius
+            ),
+            radius,
+            m.ceil(radius),
+            color
+        )
+
+        # fill in squares
+        if size.x > 2 * radius:
+            self.draw_rect(
+                (
+                    start.x + radius,
+                    start.y
+                ),
+                (
+                    size.x - 2 * radius,
+                    size.y
+                ),
+                color
+            )
+
+        if size.y > 2 * radius:
+            self.draw_rect(
+                (
+                    start.x,
+                    start.y + radius
+                ),
+                (
+                    size.x,
+                    size.y - 2 * radius
+                ),
+                color
+            )
