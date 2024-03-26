@@ -51,20 +51,25 @@ class ScrollingBackground:
 
 
 class ParalaxBackground:
+    _animation_counter: float
+
     def __init__(
         self,
         background_scope: str,
         screen_width: int,
         screen_height: int,
         parallax_multiplier: float = 1.2,
+        animated_layers: list[int] = ...,
         load: bool = False
     ) -> None:
         self._scope = background_scope
         self._multiplier = parallax_multiplier
+        self._animation_counter = 0
         self._position = 0
 
         self._screen_width = screen_width
         self._screen_height = screen_height
+        self._animated_layers = animated_layers
 
         self._textures = []
         self._sizes = []
@@ -96,18 +101,25 @@ class ParalaxBackground:
         if self._position-value <= 0:
             self._position -= value
 
-    def draw(self) -> None:
+    def draw(self, delta: float) -> None:
         """
         draw background to surface
         """
+        self._animation_counter += delta
+
         n_layers = len(self._textures)-1
         if n_layers == -1:
             self.load_textures()
-            return self.draw()
+            return self.draw(delta)
 
         for layer in range(n_layers, -1, -1):
             image_pos = self._position + 10 % self._screen_width
             image_pos *= self._multiplier**(n_layers-layer)
+
+            # if layer in self._animated_layers:
+            #     image_pos *= self._animation_counter * .1
+            #     image_pos *= self._multiplier**(n_layers-layer)
+
             image_pos = int(image_pos % self._screen_width)
             image_pos -= self._screen_width
 
