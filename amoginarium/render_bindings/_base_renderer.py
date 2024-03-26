@@ -33,7 +33,7 @@ class BaseRenderer:
     def load_texture(
             image: Image.Image,
             size: coord_t | None = None,
-            mirror: tp.Literal["x", "y", "xy"] = "",
+            mirror: tp.Literal["x", "y", "xy", "yx"] = "",
     ) -> tuple[TextureID, tuple[int, int]]:
         """
         load an image texture

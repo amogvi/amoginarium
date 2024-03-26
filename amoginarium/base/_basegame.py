@@ -29,6 +29,7 @@ from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
 from ._linked import global_vars, Coalitions
 from ..logic import SimpleLock, Color, Vec2
+from ..audio import sounds, sound_effects
 from ..render_bindings import renderer
 from ..audio import BackgroundPlayer
 from ..communications import Server
@@ -121,13 +122,13 @@ class BaseGame:
 
         # initialize pygame (logic) and renderer
         pg.init()
-        pg.mixer.init()
+        pg.mixer.init(channels=32, buffer=1024)
         renderer.init("amoginarium")
 
         # initialize background
         self._background = ...
         self._background_player = BackgroundPlayer()
-        self._background_player.volume = .3
+        self._background_player.volume = .6
 
         # add decorator with callback to self.end
         for func in ("_run_pygame", "_run_logic", "_run_comms"):
@@ -158,9 +159,12 @@ class BaseGame:
         load all textures n stuff
         """
         # load sounds
-        self._background_player.load_files([
-            "assets/audio/background/amoginarium_music_v4.mp3"
-        ])
+        sounds.load_sounds("assets/audio/background")
+        sounds.load_sounds("assets/audio/effects/minigun")
+        sounds.load_sounds("assets/audio/effects/explosions")
+        sounds.load_sounds("assets/audio/effects/shots")
+        sounds.load_sounds("assets/audio/effects/reloads")
+        self._background_player.assign_scope("background")
 
         # load entity textures
         textures.load_images("assets/images/textures.zip")
@@ -450,6 +454,9 @@ class BaseGame:
                 # spawn new player
                 Player(coalition=Coalitions.blue, controller=new_controller)
                 ic(new_controller, Player)
+
+        # update sounds
+        sound_effects.update()
 
         # update entities
         GravityAffected.calculate_gravity(delta)

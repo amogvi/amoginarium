@@ -16,14 +16,14 @@ import zipfile
 import os
 
 
-type mirror_t = tp.Literal["", "x", "y", "xy", "yx"]
+type mirror_t = tp.Literal["x", "y", "xy", "yx"]
 
 
 class Texture(tp.TypedDict):
     name: str
-    size: tuple
-    mirror: str
-    id: mirror_t
+    size: tuple[int, int]
+    mirror: mirror_t
+    id: int
 
 
 class FileImage(tp.TypedDict):
@@ -49,6 +49,8 @@ class _Textures:
 
         is_zip = os.path.isfile(path)
 
+        path = path.rstrip("/")
+
         if is_zip:
             imgzip = zipfile.ZipFile(path)
             files = sorted(imgzip.infolist(), key=lambda f: f.filename)
@@ -59,7 +61,8 @@ class _Textures:
             scope = path.split("/")[-1]
 
         if self.debug >= 2:
-            print_ic_style(f"loading scope {get_fg_color(36)}\"{scope}\"")
+            print_ic_style(f"loading texture scope "
+                           f"{get_fg_color(36)}\"{scope}\"")
 
         for f in files:
             parts = (f.filename if is_zip else f).split(".")
@@ -67,7 +70,7 @@ class _Textures:
             filename = parts[-2]
 
             # only load images
-            if ending not in ("png", "jpg"):
+            if ending.lower() not in ("png", "jpg"):
                 continue
 
             if self.debug >= 2:
@@ -93,7 +96,7 @@ class _Textures:
 
         if self.debug:
             print_ic_style(
-                f"loadinged scope {get_fg_color(36)}\"{scope}\""
+                f"loadinged texture scope {get_fg_color(36)}\"{scope}\""
                 f"{get_fg_color(247)}"
                 f", textures: {get_fg_color(37)}{len(self._raw_images[scope])}"
             )
@@ -111,7 +114,7 @@ class _Textures:
         if scope not in self._textures:
             return None
 
-        for scope in self._raw_images if scope is ... else [scope]:
+        for scope in self._raw_images if scope is None else [scope]:
             for texture in self._textures[scope]:
                 if texture["size"] is None:
                     is_same_size = size is None
@@ -203,7 +206,7 @@ class _Textures:
 
         if self.debug >= 2:
             print_ic_style(
-                f"getting all from scope {get_fg_color(36)}\"{scope}\""
+                f"getting all textures from scope {get_fg_color(36)}\"{scope}\""
             )
 
         out = []

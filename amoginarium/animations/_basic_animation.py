@@ -11,9 +11,10 @@ from threading import Thread
 import typing as tp
 import time
 
-from ..base._textures import textures
+from ..audio import LargeExplosion, PresetEffect
 from ..render_bindings import renderer
 from ..base._linked import global_vars
+from ..base._textures import textures
 from ..logic import Vec2
 
 
@@ -58,8 +59,13 @@ class ImageAnimation:
     _textures: list[int] = ...
     _sizes: list[Vec2] = ...
 
-    def __init__(self, animation_scope: str,) -> None:
+    def __init__(
+            self,
+            animation_scope: str,
+            sound_effect: type[PresetEffect] = ...
+    ) -> None:
         self._scope = animation_scope
+        self._sound_effect = sound_effect
 
     def load_textures(self, size: Vec2 = None) -> None:
         """
@@ -85,6 +91,9 @@ class ImageAnimation:
         """
         if self._textures is ...:
             self.load_textures()
+
+        if self._sound_effect is not ...:
+            self._sound_effect().play()
 
         play_animation(
             self._sizes if size is ... else len(self._sizes) * [size],
