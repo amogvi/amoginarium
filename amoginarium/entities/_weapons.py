@@ -11,9 +11,12 @@ from time import perf_counter
 from random import randint
 import typing as tp
 # from threading import Thread
+# from icecream import ic
 # import time
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
+from ..audio import PresetEffect, LargeExplosion, Shotgun, sound_effect_wrapper
+from ..audio import ContinuousSoundEffect, Minigun as MinigunSound
 from ._base_entity import ImageEntity, Entity
 from ..render_bindings import renderer
 from ..base._linked import global_vars
@@ -177,6 +180,17 @@ class Bullet(ImageEntity):
                 position_reference=self
             )
 
+            if self._explosion_radius > 64:
+                exp = LargeExplosion()
+                exp.volume = .45
+                exp.play()
+
+            # sounds like shit
+            # elif self._explosion_radius < 16:
+            #     exp = SmallExplosion()
+            #     exp.volume = .5
+            #     exp.play()
+
         self.remove(Drawn)
         super().kill()
 
@@ -209,6 +223,7 @@ class Bullet(ImageEntity):
 
 class BaseWeapon:
     _current_recoil_time: float = 0
+    _current_sound_time: float = 0
     _current_reload_time: float = 0
     _mag_state: int = 0
     _recoil_factor: float
@@ -232,6 +247,7 @@ class BaseWeapon:
         bullet_explosion_damage: float = 0,
         drop_casings: bool = False,
         bullet_lifetime=2,
+        sound_effect: type[ContinuousSoundEffect | PresetEffect] = ...
     ) -> None:
         self.parent = parent
         self._coalition = parent.coalition
@@ -248,6 +264,8 @@ class BaseWeapon:
         self._bullet_explosion_radius = bullet_explosion_radius
         self._bullet_explosion_damage = bullet_explosion_damage
         self._bullet_lifetime = bullet_lifetime
+        self._sound_effect = sound_effect
+        self.__sound_effect: sound_effect = ...
 
     @property
     def mag_size(self) -> int:
@@ -295,6 +313,9 @@ class BaseWeapon:
         if self._current_reload_time < 0 and self._mag_state <= 0:
             self._current_reload_time = 0
             self._mag_state = self._mag_size
+            sound_effect = sound_effect_wrapper("reload_generic")
+            sound_effect.volume = .4
+            sound_effect.play()
 
         # recoil time
         if self._current_recoil_time > 0:
@@ -302,6 +323,18 @@ class BaseWeapon:
 
         if self._current_recoil_time < 0:
             self._current_recoil_time = 0
+
+        # sound
+        if self._current_sound_time > 0:
+            self._current_sound_time -= delta
+
+        if self._current_sound_time < 0:
+            self._current_sound_time = 0
+
+            if self.__sound_effect is not ...:
+                if hasattr(self.__sound_effect, "done"):
+                    self.__sound_effect.done()
+                    self.__sound_effect = ...
 
     def shoot(
         self,
@@ -321,8 +354,26 @@ class BaseWeapon:
 
             return False
 
+        # audio
+        if self._sound_effect is not ...:
+            self._current_sound_time = self._recoil_time * 2
+
         if self._current_recoil_time > 0:
             return False
+
+        if self._sound_effect is not ...:
+            if hasattr(self._sound_effect, "stage_one_done"):
+                if self.__sound_effect is ...:
+                    self.__sound_effect = self._sound_effect()
+                    return False
+
+                if not self.__sound_effect.stage_one_done:
+                    return False
+
+            else:
+                exp = self._sound_effect()
+                exp.volume = .7
+                exp.play()
 
         # inacuracy
         offset = randint(-255, 255) / 255
@@ -379,8 +430,20 @@ class BaseWeapon:
         """
         reload the weapon
         """
-        self._mag_state = 0
-        self._current_reload_time = .1 if instant else self._reload_time
+        self._current_reload_time = 0 if instant else self._reload_time
+
+        if instant:
+            self._mag_state = self._mag_size
+
+        else:
+            self._mag_state = 0
+
+    def stop(self) -> None:
+        """
+        stop all running effects
+        """
+        if self.__sound_effect is not ...:
+            self.__sound_effect.stop()
 
 
 class Minigun(BaseWeapon):
@@ -394,7 +457,8 @@ class Minigun(BaseWeapon):
             inaccuracy=.01093606,
             bullet_speed=1600,
             bullet_damage=2,
-            drop_casings=drop_casings
+            drop_casings=drop_casings,
+            sound_effect=MinigunSound
         )
 
 
@@ -426,7 +490,8 @@ class Sniper(BaseWeapon):
             bullet_size=15,
             bullet_speed=2500,
             bullet_damage=10,
-            drop_casings=drop_casings
+            drop_casings=drop_casings,
+            sound_effect=Shotgun
         )
 
 
@@ -466,6 +531,7 @@ class Flak(BaseWeapon):
             bullet_explosion_radius=100,
             bullet_explosion_damage=40,
             bullet_lifetime=5,
+            sound_effect=Shotgun
         )
 
 
@@ -484,5 +550,6 @@ class CRAM(BaseWeapon):
             bullet_size=9,
             bullet_lifetime=1,
             bullet_explosion_damage=.1,
-            bullet_explosion_radius=15
+            bullet_explosion_radius=15,
+            # sound_effect=MinigunSound
         )

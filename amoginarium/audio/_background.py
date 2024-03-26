@@ -1,5 +1,16 @@
+"""
+_background.py
+22. March 2024
+
+background music
+
+Author:
+Nilusink
+"""
 from random import randint
 import pygame as pg
+
+from ._sounds import sounds
 
 
 class BackgroundPlayer:
@@ -8,9 +19,12 @@ class BackgroundPlayer:
         self._playing: pg.Channel = ...
         self.volume = 1
 
-    def load_files(self, sound_files: list[str]) -> None:
-        for file in sound_files:
-            self._sound_files.append(pg.mixer.Sound(file))
+    def assign_scope(self, scope: str) -> None:
+        """
+        select a scope to play background songs from
+        """
+        for sound in sounds.get_all_from_scope(scope):
+            self._sound_files.append(sound)
 
     def start(self) -> None:
         sound = self._sound_files[

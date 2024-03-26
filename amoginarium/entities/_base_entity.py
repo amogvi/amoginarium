@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from OpenGL.GL import glRotated
-from icecream import ic
+# from icecream import ic
 import pygame as pg
 import typing as tp
 import math as m

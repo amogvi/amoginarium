@@ -8,14 +8,14 @@ Author:
 Nilusink
 """
 from time import perf_counter
-from icecream import ic
+# from icecream import ic
 import pygame as pg
 import typing as tp
 
 from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
 from ._base_entity import LRImageEntity
-from ._weapons import Minigun as Weapon
+from ._weapons import Sniper as Weapon
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..controllers import Controller
@@ -29,7 +29,7 @@ PLAYER_OOB_LEFT_64_PATH = "amogusOOB64left"
 
 
 PIXEL_MASK = pg.mask.Mask((1, 1), True)
-PIXEL_LINE_VERTICAL = pg.mask.Mask((1, 48), True)
+PIXEL_LINE_VERTICAL = pg.mask.Mask((1, 32), True)
 
 
 class Player(LRImageEntity):
@@ -171,6 +171,7 @@ class Player(LRImageEntity):
 
         # check for player death
         if self._hp <= 0:
+            self.weapon.stop()
             self.kill(hit_by)
 
         # update last hit
@@ -184,7 +185,7 @@ class Player(LRImageEntity):
             ),
             (
                 self.position + Vec2.from_cartesian(
-                    self.size.y / 2, -24
+                    self.size.y / 2, -PIXEL_LINE_VERTICAL.get_size()[1] / 2
                 ),
                 PIXEL_LINE_VERTICAL
             ),
@@ -194,7 +195,7 @@ class Player(LRImageEntity):
             ),
             (
                 self.position - Vec2.from_cartesian(
-                    self.size.y / 2, 24
+                    self.size.y / 2, PIXEL_LINE_VERTICAL.get_size()[1] / 2
                 ),
                 PIXEL_LINE_VERTICAL
             ),
@@ -275,6 +276,9 @@ class Player(LRImageEntity):
 
         # run update from parent classes
         super().update(delta)
+
+        if self.position.y > 2000:
+            self.kill()
 
     def update_rect(self) -> None:
         self.rect = pg.Rect(
