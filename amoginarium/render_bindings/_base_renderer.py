@@ -105,3 +105,18 @@ class BaseRenderer:
         draw a simple line
         """
         raise NotImplementedError
+
+    def draw_rounded_rect(
+            self,
+            start: coord_t,
+            size: coord_t,
+            color: Color | tColor,
+            radius: float,
+            # radius_top_left: float = ...,
+            # radius_top_right: float = ...,
+            # radius_bottom_left: float = ...,
+            # radius_bottom_right: float = ...
+    ) -> None:
+        """
+        draw a rect with rounded corners
+        """
