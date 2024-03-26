@@ -130,11 +130,17 @@ class SmallExplosion(PresetEffect):
 
 
 class Shotgun(PresetEffect):
+    volume = .5
     _sound_name = "shotgun"
 
 
-def sound_effect_wrapper(sound_name: str):
-    return SoundEffect(sound_name)
+def sound_effect_wrapper(sound_name: str, volume: float = 1) -> SoundEffect:
+    """
+    returns an already set sound effect
+    """
+    effect = SoundEffect(sound_name)
+    effect.volume = volume
+    return effect
 
 
 class ThreeStageSoundEffect:

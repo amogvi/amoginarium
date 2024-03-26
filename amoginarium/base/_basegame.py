@@ -48,7 +48,7 @@ def current_time() -> str:
     return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
 
 
-SPAWNABLES: dict[str, BaseTurret] = {
+SPAWNABLES: dict[str, tp.Type[BaseTurret]] = {
     "turret.static.sniper": SniperTurret,
     "turret.static.ak47": AkTurret,
     "turret.static.minigun": MinigunTurret,
@@ -144,7 +144,8 @@ class BaseGame:
         self._background = ParalaxBackground(
             "bg3",
             *global_vars.screen_size.xy,
-            parallax_multiplier=1.6
+            parallax_multiplier=1.6,
+            # animated_layers=[4, 6]
         )
 
         # load map
@@ -366,7 +367,7 @@ class BaseGame:
             #     Updated.world_position.x = self._background.position
 
             # draw background
-            self._background.draw()
+            self._background.draw(delta)
 
             # handle groups
             Drawn.gl_draw()

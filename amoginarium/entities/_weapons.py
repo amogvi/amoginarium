@@ -182,7 +182,7 @@ class Bullet(ImageEntity):
 
             if self._explosion_radius > 64:
                 exp = LargeExplosion()
-                exp.volume = .45
+                exp.volume = .35
                 exp.play()
 
             # sounds like shit
@@ -356,7 +356,7 @@ class BaseWeapon:
 
         # audio
         if self._sound_effect is not ...:
-            self._current_sound_time = self._recoil_time * 2
+            self._current_sound_time = self._recoil_time * 1
 
         if self._current_recoil_time > 0:
             return False
