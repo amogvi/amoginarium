@@ -31,6 +31,7 @@ class Button:
         self._hover_color = Color.from_255(90, 90, 90)
         self._border_color = Color.from_255(40, 40, 40)
         self._border_width = 5
+        self._fg_color = Color.from_255(255, 255, 255)
         self._command = command
         self._text = text
         self._last_hover = False
@@ -73,6 +74,19 @@ class Button:
                 self._size - 2 * self._border_width,
                 self._color,
             )
+
+        # text
+        renderer.draw_text(
+            self._position + self._size / 2,
+            # (
+            #     self._position.x + self._size.x / 2,
+            #     self._position.y + self._size.y * 1.5
+            # ),
+            self._text,
+            self._fg_color,
+            self._hover_color if hover else self._color,
+            centered=True
+        )
 
         # check if mouse down
         mouse_left, *_ = pg.mouse.get_pressed()

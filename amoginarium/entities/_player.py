@@ -14,6 +14,7 @@ import typing as tp
 
 from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
+from ..base import Updated, Drawn
 from ._base_entity import LRImageEntity
 from ._weapons import Minigun as Weapon
 from ..render_bindings import renderer
@@ -102,6 +103,8 @@ class Player(LRImageEntity):
 
         if initial_position is ...:
             initial_position = Players.spawn_point
+
+        self._initial_position = initial_position.copy()
 
         # load textures
         if size == 64:
@@ -327,3 +330,30 @@ class Player(LRImageEntity):
             return
 
         super().gl_draw()
+
+    def kill(self, killed_by) -> None:
+        """
+        remove player from almost all groups
+        """
+        super().kill(killed_by)
+        self.add(Players)
+
+    def respawn(self, pos: Vec2 = ...) -> None:
+        """
+        respawn the player
+        """
+        self.add(
+            CollisionDestroyed,
+            FrictionXAffected,
+            GravityAffected,
+            WallCollider,
+            Players,
+            HasBars,
+            Updated,
+            Drawn
+        )
+
+        self.position = self._initial_position.copy()
+        self.velocity *= 0
+        if pos is not ...:
+            self.position = pos.copy()

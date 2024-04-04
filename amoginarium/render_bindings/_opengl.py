@@ -11,7 +11,7 @@ from OpenGL.GL import glTranslate, glMatrixMode, glLoadIdentity, glTexCoord2f
 from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
 from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f, glEnd
 from OpenGL.GL import glDisable, glBegin, glVertex, glFlush, glClearColor
-from OpenGL.GL import glBlendFunc
+from OpenGL.GL import glBlendFunc, glWindowPos2d, glDrawPixels
 from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT, GL_LINES
 from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_POLYGON
@@ -39,6 +39,7 @@ class OpenGLRenderer(BaseRenderer):
         ic("using OpenGL backend")
 
         pg.font.init()
+        self.font = pg.font.SysFont('arial', 64)
 
         # get screen size
         screen_info = pg.display.Info()
@@ -68,7 +69,7 @@ class OpenGLRenderer(BaseRenderer):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     @staticmethod
-    def set_color(color: Color | tColor) -> None:
+    def set_color(color: Color | tColor) -> Color:
         """
         set gColor
         """
@@ -79,6 +80,8 @@ class OpenGLRenderer(BaseRenderer):
 
             else:
                 glColor3f(*color.rgb1)
+            
+            return color
 
         # color as tuple
         else:
@@ -90,6 +93,8 @@ class OpenGLRenderer(BaseRenderer):
 
             else:
                 raise ValueError("Invalid color: ", color)
+            
+            return Color.from_1(*color)
 
     @staticmethod
     def load_texture(
@@ -366,3 +371,32 @@ class OpenGLRenderer(BaseRenderer):
                 ),
                 color
             )
+
+    def draw_text(self, pos, text, color, bg_color, centered=False):
+        pos = convert_coord(pos, Vec2)
+
+        bg_color = self.set_color(bg_color)
+        color = self.set_color(color)
+
+        text_surface: pg.Surface = self.font.render(
+            text, True, color.auto255, bg_color.auto255
+        )
+        text_data = pg.image.tostring(text_surface, "RGBA", True)
+        text_size: tuple[int, int] = text_surface.get_size()
+
+        pos.y = global_vars.screen_size.y - pos.y
+
+        if centered:
+            pos.x -= text_size[0] / 2
+            pos.y -= text_size[1] / 2
+
+        glWindowPos2d(*pos.xy)
+        glDrawPixels(
+            text_surface.get_width(),
+            text_surface.get_height(),
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            text_data
+        )
+
+        return text_size

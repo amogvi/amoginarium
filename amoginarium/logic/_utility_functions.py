@@ -90,7 +90,7 @@ def convert_coord[A](
     """
     if convert_to is Vec2:
         if isinstance(coord, Vec2):
-            return coord
+            return coord.copy()
 
         return Vec2.from_cartesian(*coord)
 

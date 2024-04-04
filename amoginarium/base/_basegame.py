@@ -83,6 +83,7 @@ class BaseGame:
     ) -> None:
         global_vars.show_targets = show_targets
         self.time_multiplier = time_multiplier
+        self._last_loaded = ...
         self._shifting = False
 
         # configure icecream
@@ -200,6 +201,7 @@ class BaseGame:
 
         # load map data
         data = json.load(open(map_path, "r"))
+        self._last_loaded = map_path
 
         pg.display.set_caption(f"amoginarium - {data["name"]}")
         self._bg_color = Color.to_1(*data["background"])
@@ -292,16 +294,24 @@ class BaseGame:
         self._new_controllers.append(controller)
         self._new_controllers_lock.release()
 
-    def handle_events(self) -> None:
+    def handle_events(self) -> list[str]:
+        out = []
         for event in pg.event.get():
             match event.type:
                 case pg.QUIT:
                     ic("pygame end")
-                    return self.end()
+                    self.end()
 
                 case pg.JOYDEVICEADDED:
                     joy = pg.joystick.Joystick(event.device_index)
                     GameController(joy.get_guid(), joy)
+
+                case pg.KEYDOWN:
+                    match event.key:
+                        case pg.K_ESCAPE:
+                            out.append("escape")
+
+        return out
 
     def _run_pygame(self) -> None:
         """
@@ -312,11 +322,31 @@ class BaseGame:
         clock = pg.time.Clock()
 
         in_menu: bool = True
+        has_started: bool = False
         self.load_map("assets/maps/test.json")
 
         def start_game():
+            nonlocal in_menu, has_started
+            # self._background.reset_scroll()
+            widgets[0]._text = "Continue"
+            in_menu = False
+            has_started = True
+
+        def reset_game():
             nonlocal in_menu
+            for entity in Updated.sprites():
+                entity.kill()
+
             self._background.reset_scroll()
+            global_vars.reset()
+            Updated.world_position *= 0
+
+            self.load_map(self._last_loaded)
+
+            # respawn players
+            for player in Players.sprites():
+                player.respawn()
+
             in_menu = False
 
         widgets = [
@@ -326,6 +356,14 @@ class BaseGame:
                 "Start",
                 Color.from_255(100, 100, 100),
                 start_game,
+                20
+            ),
+            Button(
+                (760, 600),
+                (400, 150),
+                "Restart",
+                Color.from_255(100, 100, 100),
+                reset_game,
                 20
             )
         ]
@@ -339,16 +377,31 @@ class BaseGame:
             delta *= self.time_multiplier  # slow-motion
 
             if in_menu:
-                self.handle_events()
+                pressed = self.handle_events()
+
+                if "escape" in pressed:
+                    start_game()
+                    continue
 
                 # update background music
-                self._background_player.update()
+                try:  # throws error on game end
+                    self._background_player.update()
+
+                except pg.error:
+                    break
 
                 self._background.scroll(delta / 200)
                 self._background.draw(delta)
 
-                for widget in widgets:
-                    widget.gl_draw()
+                if has_started:
+                    Drawn.gl_draw()
+                    HasBars.gl_draw()
+
+                    for widget in widgets:
+                        widget.gl_draw()
+
+                else:
+                    widgets[0].gl_draw()
 
                 pg.display.flip()
                 clock.tick(global_vars.max_fps)
@@ -369,18 +422,21 @@ class BaseGame:
                 last_fps_print = now
 
             # handle events
-            self.handle_events()
+            pressed = self.handle_events()
+            if "escape" in pressed:
+                in_menu = True
 
             # update background music
-            self._background_player.update()
+            try:  # throws error on game end
+                self._background_player.update()
+
+            except pg.error:
+                break
 
             # clear screen
             glClearColor(0, 0, 0, 1)
-            # self.screen.fill((0, 0, 0, 0))
-            # self.middle_layer.fill((0, 0, 0, 0))
-            # self.top_layer.fill((0, 0, 0, 0))
 
-            min_player_pos, max_player_pos = Players.get_position_extremes()
+            _, max_player_pos = Players.get_position_extremes()
 
             # background_pos_left = self._background.position + 60
 

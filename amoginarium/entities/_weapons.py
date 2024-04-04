@@ -356,7 +356,7 @@ class BaseWeapon:
 
         # audio
         if self._sound_effect is not ...:
-            self._current_sound_time = self._recoil_time * 1
+            self._current_sound_time = self._recoil_time * 1.5
 
         if self._current_recoil_time > 0:
             return False
