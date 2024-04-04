@@ -55,7 +55,7 @@ class _GlobalVars:
         return cls._instance
 
     def __init__(self) -> None:
-        self.world_position = Vec2()
+        self._world_position = Vec2()
 
     @property
     def world_position(self) -> Vec2:
@@ -122,6 +122,12 @@ class _GlobalVars:
         scaled_coord = self.translate_scale(coord)
 
         return scaled_coord - self.world_position
+
+    def reset(self):
+        """
+        reset all variables to their original state
+        """
+        self._world_position *= 0
 
 
 global_vars = _GlobalVars()

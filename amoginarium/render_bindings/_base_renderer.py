@@ -120,3 +120,18 @@ class BaseRenderer:
         """
         draw a rect with rounded corners
         """
+
+    def draw_text(
+            self,
+            pos: coord_t,
+            text: str,
+            color: Color | tColor,
+            bg_color: Color | tColor,
+            centered: bool = False
+    ) -> tuple[int, int]:
+        """
+        draw a text to the given position
+
+        :returns: the size of the drawn text
+        """
+        ...
