@@ -276,11 +276,11 @@ class BaseTurret(VisibleEntity):
             if self._target_predict is not ...:
                 renderer.draw_line(
                     self.world_position,
-                    global_vars.translate_screen_coord(self._target_predict),
+                    self._target_predict - Updated.world_position,
                     Color.from_255(50, 200, 0, 100)
                 )
                 renderer.draw_circle(
-                    global_vars.translate_screen_coord(self._target_predict),
+                    self._target_predict - Updated.world_position,
                     global_vars.translate_scale(32),
                     32,
                     Color.from_255(50, 200, 0, 100)

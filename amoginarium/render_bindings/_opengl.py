@@ -80,7 +80,7 @@ class OpenGLRenderer(BaseRenderer):
 
             else:
                 glColor3f(*color.rgb1)
-            
+
             return color
 
         # color as tuple
@@ -93,7 +93,7 @@ class OpenGLRenderer(BaseRenderer):
 
             else:
                 raise ValueError("Invalid color: ", color)
-            
+
             return Color.from_1(*color)
 
     @staticmethod
