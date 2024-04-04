@@ -205,12 +205,12 @@ class Bullet(ImageEntity):
 
             if global_vars.show_targets and self._target_pos is not ...:
                 renderer.draw_line(
-                    self.position,
-                    self._target_pos,
+                    self.world_position,
+                    self._target_pos - Updated.world_position,
                     Color.from_255(255, 100, 0, 220)
                 )
                 renderer.draw_circle(
-                    self._target_pos,
+                    self._target_pos - Updated.world_position,
                     self.size.x * .5,
                     32,
                     Color.from_255(255, 100, 0, 220)
