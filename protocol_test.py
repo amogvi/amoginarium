@@ -42,7 +42,7 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
         message = ":".join("{:02x}".format(c) for c in data)
         addr = writer.get_extra_info('peername')
 
-        print(f"Received {":".join(hex(x) for x in data)} ({len(message)} bytes) from {addr!r}")
+        print(f"Received {message} ({len(data)} bytes) from {addr!r}")
 
         print(f"Send: {message!r}")
         writer.write(data)
