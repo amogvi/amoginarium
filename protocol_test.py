@@ -11,6 +11,34 @@ melektron
 
 import asyncio
 import socket
+import struct
+import collections
+import dataclasses
+
+msg_identify_struct = struct.Struct(">20s")
+@dataclasses.dataclass
+class MsgIdentify:
+    identifier: str
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "MsgIdentify":
+        # grab all bytes from string until the null terminator and convert to string
+        id_bytes: bytes = msg_identify_struct.unpack(data)[0]
+        return cls(id_bytes.split(bytes([0]))[0].decode())
+        
+
+msg_update_struct = struct.Struct(">ii??")
+@dataclasses.dataclass
+class MsgUpdate:
+    x_value: int
+    y_value: int
+    joystick_pressed: bool
+    trigger_pressed: bool
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "MsgUpdate":
+        return cls(*msg_update_struct.unpack(data))
+
 
 async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     # configure keepalive
@@ -29,24 +57,41 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     print(f"TCP_KEEPINTVL={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
     print(f"TCP_KEEPCNT={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
 
-
     while True:
-        data: bytes = None
         try:
-            data = await reader.read(100)
+            cmd = chr((await reader.readexactly(1))[0])
+            
+            match cmd:
+                case "i":
+                    # read remaining 20 bytes
+                    msg = MsgIdentify.from_bytes(await reader.readexactly(msg_identify_struct.size))
+                    print(f"Identity ({len(msg.identifier)}b): {msg.identifier}")
+                case "u":
+                    # read remaining bytes
+                    msg = MsgUpdate.from_bytes(await reader.readexactly(msg_update_struct.size))
+                    print(f"Update: {msg}")
+        
+        except asyncio.IncompleteReadError:
+            print("Closed ended during read, disconnecting")
+            writer.close()
+            return
         except TimeoutError:
             print("Client timed out, disconnecting")
             writer.close()
             return
 
-        message = ":".join("{:02x}".format(c) for c in data)
-        addr = writer.get_extra_info('peername')
+        #message = ":".join("{:02x}".format(c) for c in data)
+        #addr = writer.get_extra_info('peername')
+#
+        #print(f"Received {message} ({len(data)} bytes) from {addr!r}")
+        #try:
+        #    print(f"ASCII: {data.decode("ASCII")}")
+        #except UnicodeDecodeError:
+        #    print("(Cannot decode to not valid Unicode)")
 
-        print(f"Received {message} ({len(data)} bytes) from {addr!r}")
-
-        print(f"Send: {message!r}")
-        writer.write(data)
-        await writer.drain()
+        #print(f"Send: {message!r}")
+        #writer.write(data)
+        #await writer.drain()
 
         #await asyncio.sleep(20);
 
