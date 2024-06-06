@@ -14,6 +14,8 @@ import socket
 import struct
 import collections
 import dataclasses
+import queue
+import time
 
 msg_identify_struct = struct.Struct(">20s")
 @dataclasses.dataclass
@@ -57,6 +59,10 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     print(f"TCP_KEEPINTVL={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
     print(f"TCP_KEEPCNT={sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
 
+    measure_span = 10
+    times = collections.deque([time.perf_counter()] * measure_span, measure_span)
+
+
     while True:
         try:
             cmd = chr((await reader.readexactly(1))[0])
@@ -69,7 +75,10 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
                 case "u":
                     # read remaining bytes
                     msg = MsgUpdate.from_bytes(await reader.readexactly(msg_update_struct.size))
-                    print(f"Update: {msg}")
+                    times.appendleft(time.perf_counter())
+                    t10 = times[0] - times[-1]
+                    t = int((t10 / measure_span) * 1000)
+                    print(f"Update {t:03}ms: {msg}")
         
         except asyncio.IncompleteReadError:
             print("Closed ended during read, disconnecting")
