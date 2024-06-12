@@ -319,5 +319,3 @@ class Color:
             int(a.b + (b.b - a.b) * t),
             int(a.a + (b.a - a.a) * t) if None not in (a.a, b.a) else None,
         )
-
-# TODO: restarting with 1 hp
