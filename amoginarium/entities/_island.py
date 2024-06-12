@@ -13,6 +13,7 @@ import typing as tp
 import math as m
 import random
 
+from ..base._linked import global_vars
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..entities import VisibleEntity
@@ -319,6 +320,13 @@ class Island(VisibleEntity):
     def gl_draw(self) -> None:
         start_pos = self.world_position
 
+        # check if island is on screen
+        if any([
+            self.position.x > global_vars.screen_size.x + global_vars.background_position,
+            self.position.x + self.size.x < global_vars.background_position
+        ]):
+            return
+
         # fill island with dirt
         if self._form is ...:
             n_rows = m.ceil(self.size.y / self._image_size[1])
@@ -334,7 +342,7 @@ class Island(VisibleEntity):
             for column in range(n_columns):
                 texture = self._dirt_texture
 
-                # check adjesant blocks
+                # check adjacent blocks
                 block_top = 0
                 block_bottom = 0
                 block_left = 0

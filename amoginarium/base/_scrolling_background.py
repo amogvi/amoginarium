@@ -12,6 +12,7 @@ from icecream import ic
 
 import pygame as pg
 
+from ..base._linked import global_vars
 from ..render_bindings import renderer
 from ..base._textures import textures
 
@@ -101,9 +102,19 @@ class ParalaxBackground:
         if self._position-value <= 0:
             self._position -= value
 
+        # tmp = global_vars.world_position
+        # tmp.x = self.position
+        # global_vars.world_position = tmp
+        global_vars.background_position = self.position
+
     def reset_scroll(self) -> None:
         self._animation_counter = 0
         self._position = 0
+
+        # tmp = global_vars.world_position
+        # tmp.x = self.position
+        # global_vars.world_position = tmp
+        global_vars.background_position = self.position
 
     def draw(self, delta: float) -> None:
         """

@@ -189,14 +189,23 @@ class Color:
 
     @classmethod
     def black(cls, alpha: int = None) -> tp.Self:
+        """
+        :param alpha: alpha in range [0, 255]
+        """
         return cls.from_255(0, 0, 0, alpha)
 
     @classmethod
     def white(cls, alpha: int = None) -> tp.Self:
+        """
+        :param alpha: alpha in range [0, 255]
+        """
         return cls.from_255(255, 255, 255, alpha)
 
     @classmethod
     def red(cls, alpha: int = None) -> tp.Self:
+        """
+        :param alpha: alpha in range [0, 255]
+        """
         return cls.from_255(255, 0, 0, alpha)
 
     @property
@@ -209,15 +218,20 @@ class Color:
 
     @property
     def rgba255(self) -> tuple[int, int, int, int]:
-        if self.a is None:
-            raise ValueError("alpha value has not been set")
+        alpha = 255 if self.a is None else self.a
 
         return (
             int(self.r),
             int(self.g),
             int(self.b),
-            int(self.a)
+            int(alpha)
         )
+
+    @property
+    def argb255(self) -> tuple[int, int, int, int]:
+        rgba = self.rgba255
+
+        return (rgba[3], *rgba[:3])
 
     @property
     def auto255(self) -> tuple[int, int, int, int] | tuple[int, int, int]:
@@ -229,10 +243,15 @@ class Color:
 
     @property
     def rgba1(self) -> tuple[float, float, float, float]:
-        if self.a is None:
-            raise ValueError("alpha value has not been set")
+        alpha = 1 if self.a is None else self.a
 
-        return self.to_1(self.r, self.g, self.b, self.a)
+        return self.to_1(self.r, self.g, self.b, alpha)
+
+    @property
+    def argb1(self) -> tuple[int, int, int, int]:
+        rgba = self.rgba1
+
+        return (rgba[3], *rgba[:3])
 
     @property
     def auto1(
@@ -300,3 +319,5 @@ class Color:
             int(a.b + (b.b - a.b) * t),
             int(a.a + (b.a - a.a) * t) if None not in (a.a, b.a) else None,
         )
+
+# TODO: restarting with 1 hp
