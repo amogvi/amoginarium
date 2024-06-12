@@ -43,6 +43,7 @@ class Player(LRImageEntity):
     _movement_acceleration: float = 700
     _heal_per_second: float = 1.5
     _time_to_heal: float = 10
+    _max_speed: float = 1000
     _max_hp: int = 80
     _hp: int = 0
 
@@ -248,22 +249,32 @@ class Player(LRImageEntity):
 
         # update controls
         self._controller.update(delta)
+
+        # accelerate right
         if self._controller.joy_x > 0:
-            self.acceleration.x += self._movement_acceleration
+            if self.velocity.x < self._max_speed:
+                self.acceleration.x += self._movement_acceleration
+
             self.facing.x = 1
 
+        # accelerate left
         elif self._controller.joy_x < 0:
-            self.acceleration.x -= self._movement_acceleration
+            if self.velocity.x > -self._max_speed:
+                self.acceleration.x -= self._movement_acceleration
+
             self.facing.x = -1
 
+        # jump
         if self._controller.jump and self.on_ground:
             self._controller.rumble(300, 2000, 500)
             self.velocity.y = -400
 
+        # reload
         if self._controller.reload:
             self.weapon.reload()
 
         # directional stuff
+        # shoot
         if self._controller.shoot:
             # shoot a bit up
             shot_direction = self.facing.copy()
@@ -331,7 +342,7 @@ class Player(LRImageEntity):
 
         super().gl_draw()
 
-    def kill(self, killed_by) -> None:
+    def kill(self, killed_by=...) -> None:
         """
         remove player from almost all groups
         """

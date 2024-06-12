@@ -97,6 +97,25 @@ class OpenGLRenderer(BaseRenderer):
             return Color.from_1(*color)
 
     @staticmethod
+    def check_out_of_screen(
+            pos,
+            size,
+    ) -> bool:
+        """
+        check if a rect is on the screen
+        """
+        pos = convert_coord(pos, Vec2)
+        size = convert_coord(size, Vec2)
+
+        return False
+
+        # 200 for buffering
+        return any([
+            pos.x > global_vars.screen_size.x + 200,
+            pos.x + size.x < -200
+        ])
+
+    @staticmethod
     def load_texture(
             image,
             size,
@@ -152,6 +171,10 @@ class OpenGLRenderer(BaseRenderer):
             pos = global_vars.translate_screen_coord(pos)
             size = global_vars.translate_scale(size)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(pos, size):
+            return
+
         # reset color
         glColor3f(1, 1, 1)
 
@@ -192,6 +215,10 @@ class OpenGLRenderer(BaseRenderer):
             center = global_vars.translate_screen_coord(center)
             radius = global_vars.translate_scale(radius)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(center, (radius, 0)):
+            return
+
         glLoadIdentity()  # reset previous glTranslate statements
         glTranslate(center.x, center.y, 0)
 
@@ -220,6 +247,10 @@ class OpenGLRenderer(BaseRenderer):
             start = global_vars.translate_screen_coord(start)
             size = global_vars.translate_scale(size)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, size):
+            return
+
         glLoadIdentity()  # reset previous glTranslate statements
         glTranslate(start.x, start.y, 0)
 
@@ -246,6 +277,10 @@ class OpenGLRenderer(BaseRenderer):
         if convert_global:
             center = global_vars.translate_screen_coord(center)
             radius = global_vars.translate_scale(radius)
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(center, (radius + thickness, 0)):
+            return
 
         glLoadIdentity()
         glTranslate(center.x, center.y, 0)
@@ -293,6 +328,10 @@ class OpenGLRenderer(BaseRenderer):
             start = global_vars.translate_screen_coord(start)
             end = global_vars.translate_scale(end)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, end - start):
+            return
+
         if global_position:
             glLoadIdentity()  # reset previous glTranslate statements
 
@@ -312,6 +351,10 @@ class OpenGLRenderer(BaseRenderer):
     ) -> None:
         start = convert_coord(start, Vec2)
         size = convert_coord(size, Vec2)
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, size):
+            return
 
         # circles at edges
         self.draw_circle(
@@ -378,10 +421,11 @@ class OpenGLRenderer(BaseRenderer):
         bg_color = self.set_color(bg_color)
         color = self.set_color(color)
 
+        # ic(bg_color.argb255)
         text_surface: pg.Surface = self.font.render(
-            text, True, color.auto255, bg_color.auto255
+            text, True, color.argb255, bg_color.argb255
         )
-        text_data = pg.image.tostring(text_surface, "RGBA", True)
+        text_data = pg.image.tostring(text_surface, "ARGB", True)
         text_size: tuple[int, int] = text_surface.get_size()
 
         pos.y = global_vars.screen_size.y - pos.y
@@ -389,6 +433,10 @@ class OpenGLRenderer(BaseRenderer):
         if centered:
             pos.x -= text_size[0] / 2
             pos.y -= text_size[1] / 2
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(pos, text_size):
+            return
 
         glWindowPos2d(*pos.xy)
         glDrawPixels(

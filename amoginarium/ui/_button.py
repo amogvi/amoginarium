@@ -84,7 +84,8 @@ class Button:
             # ),
             self._text,
             self._fg_color,
-            self._hover_color if hover else self._color,
+            (0, 0, 0, 0),
+            # self._hover_color if hover else self._color,
             centered=True
         )
 

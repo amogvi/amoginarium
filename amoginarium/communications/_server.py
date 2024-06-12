@@ -21,7 +21,7 @@ from ..controllers import WsController
 
 class InitiateMessage(pydantic.BaseModel):
     m: tp.Literal["i"]
-    id: str  # itentifier
+    id: str  # identifier
 
 
 class UpdateMessage(pydantic.BaseModel):
@@ -64,7 +64,8 @@ class Server:
 
         self._stop = ...
 
-    async def _client_handler(self, ws: WebSocketServerProtocol) -> None:
+    @staticmethod
+    async def _client_handler(ws: WebSocketServerProtocol) -> None:
         ic("ws new client", ws.host, ws.port)
 
         # receive controller id

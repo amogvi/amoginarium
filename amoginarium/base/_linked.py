@@ -41,6 +41,7 @@ class _GlobalVars:
 
     max_fps: int = 60
     show_targets: bool = True
+    background_position = 0
 
     def __new__(cls, *args, **kwargs) -> tp.Self:
         # only one instance may be created

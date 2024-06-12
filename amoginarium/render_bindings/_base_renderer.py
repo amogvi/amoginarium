@@ -54,6 +54,15 @@ class BaseRenderer:
         """
         raise NotImplementedError
 
+    @staticmethod
+    def check_out_of_screen(
+            pos,
+            size,
+    ) -> bool:
+        """
+        check if a rect is out of screen
+        """
+
     def draw_circle(
             self,
             center: coord_t,

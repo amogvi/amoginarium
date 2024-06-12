@@ -1,0 +1,52 @@
+{
+    "name": "Tutorial",
+    "background": [0, 0, 0 ,255],
+    "spawn_pos": [100, 600],
+    "platforms": [
+        {
+            "pos": [0, 800],
+            "size": [2048, 64]
+        },
+        {
+            "pos": [850, 544],
+            "form": [
+                [0, 1],
+                [0, 1],
+                [1, 1]
+            ]
+        },
+        {
+            "pos": [2048, 800],
+            "size": [2048, 64]
+        },
+        {
+            "pos": [4096, 800],
+            "size": [2048, 64]
+        },
+        {
+            "pos": [6144, 800],
+            "size": [2048, 64]
+        },
+        {
+            "pos": [8192, 800],
+            "size": [2048, 64]
+        }
+    ],
+    "entities": [
+        {
+            "type": "turret.static.ak47",
+            "pos": [2000, 700]
+        },
+        {
+            "type": "instructions.text",
+            "pos": [500, 200],
+            "args": {
+                "text": "Hello!"
+            }
+        },
+        {
+            "type": "turret.static.sniper",
+            "pos": [4500, 700]
+        }
+    ]
+}

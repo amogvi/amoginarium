@@ -7,6 +7,7 @@ Defines the core game
 Author:
 Nilusink
 """
+import math
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
 from contextlib import suppress
@@ -23,7 +24,7 @@ from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
 from ..entities import Player, Island, Bullet, BaseTurret, FlakTurret
-from ..entities import CRAMTurret
+from ..entities import CRAMTurret, TextEntity
 from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
@@ -45,6 +46,9 @@ class BoundFunction(tp.TypedDict):
 
 
 def current_time() -> str:
+    """
+    helper function for IC debugging
+    """
     ms = str(round(perf_counter(), 4)).split(".")[1]
     return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
 
@@ -56,6 +60,7 @@ SPAWNABLES: dict[str, tp.Type[BaseTurret]] = {
     "turret.static.mortar": MortarTurret,
     "turret.static.flak": FlakTurret,
     "turret.static.cram": CRAMTurret,
+    "instructions.text": TextEntity
 }
 
 
@@ -170,7 +175,10 @@ class BaseGame:
 
         # load entity textures
         textures.load_images("assets/images/textures.zip")
+        textures.load_images("assets/images/bg1.zip")
+        textures.load_images("assets/images/bg2.zip")
         textures.load_images("assets/images/bg3.zip")
+        textures.load_images("assets/images/bg4.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
         self._background.load_textures()
@@ -254,10 +262,24 @@ class BaseGame:
                 )
                 continue
 
-            SPAWNABLES[entity["type"]](
-                Coalitions.red,
-                Vec2.from_cartesian(*entity["pos"])
-            )
+            # check if arguments were given
+            args = {}
+            if "args" in entity:
+                args = entity["args"]
+
+            try:
+                SPAWNABLES[entity["type"]](
+                    Coalitions.red,
+                    Vec2.from_cartesian(*entity["pos"]),
+                    **args
+                )
+
+            except TypeError:
+                print_ic_style(
+                    f"{CC.fg.RED}invalid arguments for "
+                    f"{CC.fg.YELLOW}{entity["type"]}{CC.fg.RED}: "
+                    f"\"{CC.fg.YELLOW}{args}{CC.fg.RED}\""
+                )
 
     def time_since_start(self) -> str:
         """
@@ -295,6 +317,9 @@ class BaseGame:
         self._new_controllers_lock.release()
 
     def handle_events(self) -> list[str]:
+        """
+        handles pygame events
+        """
         out = []
         for event in pg.event.get():
             match event.type:
@@ -323,7 +348,7 @@ class BaseGame:
 
         in_menu: bool = True
         has_started: bool = False
-        self.load_map("assets/maps/test.json")
+        self.load_map("assets/maps/tutorial.json")
 
         def start_game():
             nonlocal in_menu, has_started
@@ -445,7 +470,17 @@ class BaseGame:
                                        + global_vars.screen_size.x - 1400
 
                 if max_player_pos.x > background_pos_right:
-                    self._background.scroll(delta * 3)
+                    # world speed coefficient:
+                    # V(x)=ℯ^( ( (1400-x) / 800 )^2 )
+
+                    speed_coeff = (abs((
+                        self._background.position
+                        + global_vars.screen_size.x
+                        - 1400
+                    ) - max_player_pos.x) / 800) ** 2
+                    speed_coeff = math.exp(speed_coeff)
+
+                    self._background.scroll(delta * 3 * speed_coeff)
                     Updated.world_position.x = self._background.position
 
                 else:
@@ -453,7 +488,7 @@ class BaseGame:
 
             else:
                 background_pos_right = self._background.position \
-                                       + global_vars.screen_size.x - 500
+                                       + global_vars.screen_size.x - 900
 
                 if max_player_pos.x > background_pos_right:
                     self._background.scroll(delta * 3)
@@ -466,6 +501,8 @@ class BaseGame:
 
             # draw background
             self._background.draw(delta)
+
+            # global_vars.pixel_per_meter *= .999
 
             # handle groups
             Drawn.gl_draw()
