@@ -127,7 +127,10 @@ class BaseTurret(VisibleEntity):
         # scan for targets and engage the closest one
         targets = []
         if self.intercept_players:
-            targets.extend(Players.sprites())
+            # only add living playerse
+            targets.extend(
+                [p for p in Players.sprites() if p.alive]
+            )
 
         if self.intercept_bullets:
             targets.extend(Bullets.sprites())

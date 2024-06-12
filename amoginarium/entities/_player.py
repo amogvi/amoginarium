@@ -101,6 +101,7 @@ class Player(LRImageEntity):
 
         self._controller = controller
         self._on_ground = False
+        self._alive = True
 
         if initial_position is ...:
             initial_position = Players.spawn_point
@@ -167,11 +168,20 @@ class Player(LRImageEntity):
     def parent(self) -> tp.Self:
         return self
 
+    @property
+    def alive(self) -> bool:
+        """
+        checks if the player is alive
+        """
+        return self._alive
+
     def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
         deal damage to the player
         """
         self._hp -= damage
+
+        self._controller.feedback_hit()
 
         # check for player death
         if self._hp <= 0:
@@ -279,14 +289,16 @@ class Player(LRImageEntity):
             # shoot a bit up
             shot_direction = self.facing.copy()
             shot_direction.y = -.4
-            self.weapon.shoot(
+            if self.weapon.shoot(
                 shot_direction
-            )
+            ):
+                self._controller.feedback_shoot()
 
         # heal
         if self._hp < self._max_hp:
             if perf_counter() - self._last_hit > self._time_to_heal:
                 self._hp += self._heal_per_second * delta
+                self._controller.feedback_heal()
 
         # run update from parent classes
         super().update(delta)
@@ -346,6 +358,10 @@ class Player(LRImageEntity):
         """
         remove player from almost all groups
         """
+        # set state to dead
+        self._alive = False
+
+        # remove from every group except players
         super().kill(killed_by)
         self.add(Players)
 
@@ -353,6 +369,10 @@ class Player(LRImageEntity):
         """
         respawn the player
         """
+        # update status to alive
+        self._alive = True
+
+        # re-add player to all groups
         self.add(
             CollisionDestroyed,
             FrictionXAffected,
@@ -364,7 +384,12 @@ class Player(LRImageEntity):
             Drawn
         )
 
+        # reset health
+        self._hp = self._max_hp
+
+        # reset position / velocity
         self.position = self._initial_position.copy()
         self.velocity *= 0
+
         if pos is not ...:
             self.position = pos.copy()

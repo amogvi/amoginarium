@@ -243,6 +243,21 @@ class Controller:
         stop joystick vibration
         """
 
+    def feedback_shoot(self) -> None:
+        """
+        controller input on shoot
+        """
+
+    def feedback_hit(self) -> None:
+        """
+        controller input on hit
+        """
+
+    def feedback_heal(self) -> None:
+        """
+        controller input on heal
+        """
+
     def __str__(self) -> str:
         return f"<{self.__class__.__name__}, id=\"{self.id}\">"
 
