@@ -2,15 +2,16 @@
 _ws_controller.py
 01. February 2024
 
-interfaces with a ws controller client
+interfaces with an amogistick controller client
 
 Author:
 Nilusink
 """
+
 from ._base_controller import Controller
 
 
-class WsController(Controller):
+class AmogistickController(Controller):
     x_dead_zone: float = .1
     y_dead_zone: float = .1
     joy_thresh: float = 5e3

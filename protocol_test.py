@@ -14,6 +14,7 @@ import socket
 import struct
 import collections
 import dataclasses
+import aioconsole as aioc 
 import queue
 import time
 
@@ -41,8 +42,10 @@ class MsgUpdate:
     def from_bytes(cls, data: bytes) -> "MsgUpdate":
         return cls(*msg_update_struct.unpack(data))
 
-
 async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    global testrd, testwt
+    testrd = reader
+    testwt = writer
     # configure keepalive
     # https://stackoverflow.com/questions/75326508/set-socket-options-on-python-asyncio-streams-api
     sock: socket.socket = writer.get_extra_info("socket")
@@ -116,12 +119,25 @@ async def main() -> int:
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}')
 
-    async with server:
-        try:
-            await server.serve_forever()
-        except asyncio.CancelledError:
-            print("anceled")
-            pass
+    #async with server:
+    #    try:
+    #        await server.serve_forever()
+    #    except asyncio.CancelledError:
+    #        print("anceled")
+    #        pass
+
+    await server.start_serving()
+    
+    while True:
+        input = await aioc.ainput("")
+        if input == "q":
+            print("closing...")
+            server.close()
+            testwt.write(b'asdf')
+            await testwt.drain()
+            testwt.close()
+            await server.wait_closed()
+            break
     
     return 0;
 
