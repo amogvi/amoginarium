@@ -105,12 +105,14 @@ class Controller:
     _keys: controls
 
     def __new__(cls, *args, **kwargs):
+        print("base new")
         if len(args) > 1:
             cid = args[0]
+            ic("called base __new__ with id ", cid)
             if Controllers.exists(cid):
                 ic("re-linking already existing controller", cid)
                 return Controllers.get_by_id(cid)
-
+        ic("create instance in __new__")
         new_instance = super(Controller, cls).__new__(cls)
 
         # append every new instance to controllers

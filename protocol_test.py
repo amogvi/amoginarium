@@ -30,13 +30,15 @@ class MsgIdentify:
         return cls(id_bytes.split(bytes([0]))[0].decode())
         
 
-msg_update_struct = struct.Struct(">ii??")
+msg_update_struct = struct.Struct(">ii????")
 @dataclasses.dataclass
 class MsgUpdate:
     x_value: int
     y_value: int
     joystick_pressed: bool
     trigger_pressed: bool
+    aux_l_pressed: bool
+    aux_r_pressed: bool
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "MsgUpdate":
