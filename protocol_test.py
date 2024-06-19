@@ -54,7 +54,7 @@ class AnimCode(enum.Enum):
     SINGLE_FADE = 4
     CYCLIC_FADE = 5
 
-msg_anim_cmd_struct = struct.Struct(">1sBBBBBBBBII")
+msg_anim_cmd_struct = struct.Struct(">1sBBBBBBBBII?")
 @dataclasses.dataclass
 class MsgAnimCmd:
     layer: int
@@ -63,6 +63,7 @@ class MsgAnimCmd:
     sec_color: tuple[int, int, int]
     prim_period: int
     sec_period: int
+    keep: bool
     m: bytes = b"a"
 
     def to_bytes(self) -> bytes:
@@ -77,7 +78,8 @@ class MsgAnimCmd:
             self.sec_color[1],
             self.sec_color[2],
             self.prim_period,
-            self.sec_period
+            self.sec_period,
+            self.keep
         )
 
 async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -170,12 +172,13 @@ async def main() -> int:
         input = await aioc.ainput("")
         if input == "l":
             animcmd = MsgAnimCmd(
-                layer=1,
+                layer=2,
                 anim_code=AnimCode.FLASH,
                 prim_color=(255, 0, 255),
                 sec_color=(0, 0, 0),
-                prim_period=80,
-                sec_period=0
+                prim_period=120,
+                sec_period=0,
+                keep=False
             )
             print(animcmd)
             msg = animcmd.to_bytes()

@@ -17,11 +17,6 @@ class AmogistickController(Controller):
     y_dead_zone: float = .1
     joy_thresh: float = 5e3
 
-    # forward args to base controller
-    def __new__(cls, *args, **kwargs):
-        print("this new")
-        return super(AmogistickController, cls).__new__(cls, *args, **kwargs)
-
     def __init__(self, controller_id: str) -> None:
         super().__init__(controller_id)
 

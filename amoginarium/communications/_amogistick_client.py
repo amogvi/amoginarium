@@ -15,6 +15,7 @@ from icecream import ic
 import queue
 import struct
 import time
+import enum
 from ..controllers._amogistick_controller import AmogistickController
 
 
@@ -45,6 +46,44 @@ class MsgUpdate:
         return cls(*msg_update_struct.unpack(data))
 
 
+class AnimCode(enum.Enum):
+    INACTIVE = 0
+    STATIC = 1
+    FLASH = 2
+    BLINK = 3
+    SINGLE_FADE = 4
+    CYCLIC_FADE = 5
+
+
+msg_anim_cmd_struct = struct.Struct(">1sBBBBBBBBII?")
+@dataclasses.dataclass
+class MsgAnimCmd:
+    layer: int
+    anim_code: AnimCode 
+    prim_color: tuple[int, int, int]
+    sec_color: tuple[int, int, int]
+    prim_period: int
+    sec_period: int
+    keep: bool
+    m: bytes = b"a"
+
+    def to_bytes(self) -> bytes:
+        return msg_anim_cmd_struct.pack(
+            self.m,
+            self.layer,
+            self.anim_code.value,
+            self.prim_color[0],
+            self.prim_color[1],
+            self.prim_color[2],
+            self.sec_color[0],
+            self.sec_color[1],
+            self.sec_color[2],
+            self.prim_period,
+            self.sec_period,
+            self.keep
+        )
+
+
 class AmogistickClient:
 
     def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -71,9 +110,52 @@ class AmogistickClient:
             msg = MsgIdentify.from_bytes(await self._reader.readexactly(msg_identify_struct.size))
             ic(f"Identity ({len(msg.identifier)}b): {msg.identifier}")
 
-            # create the controller
-            self._controller = AmogistickController(msg.identifier)
-            
+            # create or get the controller
+            self._controller = AmogistickController.get(msg.identifier)
+            # link animation callbacks
+            self._controller.on_feedback_hit = lambda: self.send_message(MsgAnimCmd(
+                0, 
+                AnimCode.FLASH, 
+                (255, 0, 0), 
+                (0, 0, 0),
+                8, 
+                0,
+                False
+            ))
+            self._controller.on_feedback_shoot = lambda: self.send_message(MsgAnimCmd(
+                1, 
+                AnimCode.FLASH, 
+                (0, 0, 255), 
+                (0, 0, 0),
+                2, 
+                0,
+                False
+            ))
+            self._controller.on_feedback_heal_start = lambda: self.send_message(MsgAnimCmd(
+                3, 
+                AnimCode.CYCLIC_FADE, 
+                (50, 255, 0), 
+                (0, 0, 0),
+                60, 
+                200,
+                True
+            ))
+            self._controller.on_feedback_heal_stop = lambda: self.send_message(MsgAnimCmd(
+                3, 
+                AnimCode.INACTIVE, 
+                (0, 0, 0), 
+                (0, 0, 0),
+                0, 
+                0,
+                False
+            ))
+
+            # reset all currently running controller animations
+            self.send_message(MsgAnimCmd(0, AnimCode.INACTIVE, (0, 0, 0), (0, 0, 0), 0, 0, False))
+            self.send_message(MsgAnimCmd(1, AnimCode.INACTIVE, (0, 0, 0), (0, 0, 0), 0, 0, False))
+            self.send_message(MsgAnimCmd(2, AnimCode.INACTIVE, (0, 0, 0), (0, 0, 0), 0, 0, False))
+            self.send_message(MsgAnimCmd(3, AnimCode.INACTIVE, (0, 0, 0), (0, 0, 0), 0, 0, False))
+
             while True:
                 cmd = chr((await self._reader.readexactly(1))[0])
                 
@@ -106,6 +188,11 @@ class AmogistickClient:
             ic("amogistick: client timed out, disconnecting")
             self._in_timeout = True
             await self.close()
+    
+    def send_message(self, msg: MsgAnimCmd ) -> None:  # and possibly more in the future
+        self._writer.write(msg.to_bytes())
+        #ic("send: ", msg.to_bytes())
+        asyncio.get_event_loop().create_task(self._writer.drain())
     
     async def close(self) -> None:
         """

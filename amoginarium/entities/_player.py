@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from time import perf_counter
-# from icecream import ic
+from icecream import ic
 import pygame as pg
 import typing as tp
 
@@ -181,7 +181,8 @@ class Player(LRImageEntity):
         """
         self._hp -= damage
 
-        self._controller.feedback_hit()
+        if damage != 0:
+            self._controller.feedback_hit()
 
         # check for player death
         if self._hp <= 0:
@@ -295,10 +296,13 @@ class Player(LRImageEntity):
                 self._controller.feedback_shoot()
 
         # heal
-        if self._hp < self._max_hp:
-            if perf_counter() - self._last_hit > self._time_to_heal:
+        if perf_counter() - self._last_hit > self._time_to_heal:
+            if self._hp < self._max_hp:
                 self._hp += self._heal_per_second * delta
-                self._controller.feedback_heal()
+                self._controller.feedback_heal_start()
+            else:
+                self._controller.feedback_heal_stop()
+        
 
         # run update from parent classes
         super().update(delta)
