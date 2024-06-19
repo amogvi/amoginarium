@@ -134,6 +134,7 @@ class BaseGame:
 
         # initialize background
         self._background = ...
+        self._bg_color = (0, 0, 0)
         self._background_player = BackgroundPlayer()
         self._background_player.volume = .6
 
@@ -148,12 +149,28 @@ class BaseGame:
                 )(getattr(self, func))
             )
 
-        self._background = ParalaxBackground(
-            "bg3",
-            *global_vars.screen_size.xy,
-            parallax_multiplier=1.6,
-            # animated_layers=[4, 6]
-        )
+        self._backgrounds = [
+            ParalaxBackground(
+                "bg1",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg2",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg3",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg4",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            )
+        ]
 
         # load map
         self.preload()
@@ -175,13 +192,13 @@ class BaseGame:
 
         # load entity textures
         textures.load_images("assets/images/textures.zip")
+        textures.load_images("assets/images/dirt_islands.zip")
         textures.load_images("assets/images/bg1.zip")
         textures.load_images("assets/images/bg2.zip")
         textures.load_images("assets/images/bg3.zip")
         textures.load_images("assets/images/bg4.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
-        self._background.load_textures()
         Island.load_textures()
         Player.load_textures()
         Bullet.load_textures()
@@ -212,8 +229,18 @@ class BaseGame:
         self._last_loaded = map_path
 
         pg.display.set_caption(f"amoginarium - {data["name"]}")
-        self._bg_color = Color.to_1(*data["background"])
         Players.spawn_point = Vec2.from_cartesian(*data["spawn_pos"])
+
+        # set background
+        if 0 <= data["background"]-1 <= len(self._backgrounds):
+            self._background = self._backgrounds[data["background"]-1]
+
+        else:
+            self._background = self._backgrounds[0]
+
+        # check if background has been assigned
+        if not self._background.loaded:
+            self._background.load_textures()
 
         # # spwan a lot of bulllets
         # Players.spawn_point = Vec2.from_cartesian(950, -100)
@@ -336,6 +363,12 @@ class BaseGame:
                         case pg.K_ESCAPE:
                             out.append("escape")
 
+                        case pg.K_r:
+                            out.append("r")
+
+                        case pg.K_c:
+                            out.append("c")
+
         return out
 
     def _run_pygame(self) -> None:
@@ -404,8 +437,12 @@ class BaseGame:
             if in_menu:
                 pressed = self.handle_events()
 
-                if "escape" in pressed:
+                if "escape" in pressed or "c" in pressed:
                     start_game()
+                    continue
+
+                elif "r" in pressed:
+                    reset_game()
                     continue
 
                 # update background music

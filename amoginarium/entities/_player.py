@@ -97,7 +97,7 @@ class Player(LRImageEntity):
         size: int = 64
 
     ) -> None:
-        self._hp = self._max_hp
+        self._hp = 9999999999999999 #self._max_hp
 
         self._controller = controller
         self._on_ground = False
