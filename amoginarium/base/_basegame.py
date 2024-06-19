@@ -33,7 +33,7 @@ from ..logic import SimpleLock, Color, Vec2
 from ..audio import sounds, sound_effects
 from ..render_bindings import renderer
 from ..audio import BackgroundPlayer
-from ..communications import Server
+from ..communications import TCPServer
 from ..animations import explosion
 from ._textures import textures
 from ..ui import Button
