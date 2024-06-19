@@ -1,6 +1,6 @@
 {
     "name": "test map",
-    "background": [0, 0, 0 ,255],
+    "background": 3,
     "spawn_pos": [100, 100],
     "platforms": [
         {

@@ -489,7 +489,7 @@ class Sniper(BaseWeapon):
             inaccuracy=.00500002,
             bullet_size=15,
             bullet_speed=2500,
-            bullet_damage=10,
+            bullet_damage=4,
             drop_casings=drop_casings,
             sound_effect=Shotgun
         )

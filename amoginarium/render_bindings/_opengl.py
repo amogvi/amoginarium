@@ -35,11 +35,45 @@ type TextureID = int
 
 
 class OpenGLRenderer(BaseRenderer):
+    def _get_font(
+            self,
+            size: int,
+            family: str,
+            bold: bool = False,
+            italic: bool = False
+    ) -> pg.font.Font:
+        # check if font exists
+        if size in self._fonts:
+            for font in self._fonts[size]:
+                if all([
+                    font.name == family,
+                    font.bold == bold,
+                    font.italic == italic
+                ]):
+                    return font
+
+        else:
+            self._fonts[size] = []
+
+        # no font found, create new
+        new_font = pg.font.SysFont(family, size, bold, italic)
+        self._fonts[size].append(new_font)
+
+        return new_font
+
     def init(self, title):
         ic("using OpenGL backend")
 
         pg.font.init()
-        self.font = pg.font.SysFont('arial', 64)
+
+        self._fonts = {
+            32: [
+                pg.font.SysFont('arial', 32)
+            ],
+            64: [
+                pg.font.SysFont('arial', 64)
+            ]
+        }
 
         # get screen size
         screen_info = pg.display.Info()
@@ -415,18 +449,59 @@ class OpenGLRenderer(BaseRenderer):
                 color
             )
 
-    def draw_text(self, pos, text, color, bg_color, centered=False):
-        pos = convert_coord(pos, Vec2)
-
+    def draw_text(
+            self,
+            pos,
+            text,
+            color,
+            bg_color,
+            centered=False,
+            font_size=64,
+            font_family="arial",
+            bold=False,
+            italic=False
+    ):
         bg_color = self.set_color(bg_color)
         color = self.set_color(color)
 
-        # ic(bg_color.argb255)
-        text_surface: pg.Surface = self.font.render(
-            text, True, color.argb255, bg_color.argb255
+        # weird conversion because pygame is ass
+        text_surface: pg.Surface = self.generate_pg_surf_text(
+            text, color, bg_color, font_size, font_family, bold, italic
         )
-        text_data = pg.image.tostring(text_surface, "ARGB", True)
-        text_size: tuple[int, int] = text_surface.get_size()
+        # text_surface.set_alpha(color.a)
+
+        # draw text
+        self.draw_pg_surf(pos, text_surface, centered)
+
+        return text_surface.get_size()
+
+    def generate_pg_surf_text(
+            self,
+            text,
+            color,
+            bg_color,
+            font_size=64,
+            font_family="arial",
+            bold=False,
+            italic=False
+    ):
+        return self._get_font(
+            font_size,
+            font_family,
+            bold,
+            italic
+        ).render(
+            text,
+            True,
+            color.rgb255,
+            bg_color.rgb255 if bg_color.a > 125 else None
+        )
+
+    def draw_pg_surf(self, pos, surface, centered=False):
+        pos = convert_coord(pos, Vec2)
+
+        text_data = pg.image.tostring(surface, "RGBA", True)
+        text_size: tuple[int, int] = surface.get_size()
 
         pos.y = global_vars.screen_size.y - pos.y
 
@@ -440,11 +515,10 @@ class OpenGLRenderer(BaseRenderer):
 
         glWindowPos2d(*pos.xy)
         glDrawPixels(
-            text_surface.get_width(),
-            text_surface.get_height(),
+            surface.get_width(),
+            surface.get_height(),
             GL_RGBA,
             GL_UNSIGNED_BYTE,
             text_data
         )
 
-        return text_size

@@ -78,7 +78,7 @@ def calculate_launch_angle(
             #     print_ic_style(a_pos.xy, a_time)
             #     continue
 
-            print_ic_style("impossible: ", a_pos.xy, a_time)
+            # print_ic_style("impossible: ", a_pos.xy, a_time)
             raise ValueError("no possible launch angle found")
 
         # recalculate the probable position of the target using the now

@@ -89,6 +89,13 @@ class ParalaxBackground:
             self._sizes.append((self._screen_width, self._screen_height))
 
     @property
+    def loaded(self) -> bool:
+        """
+        checks if textures have been loaded
+        """
+        return len(self._textures) > 0
+
+    @property
     def position(self) -> float:
         """
         get the position of the top layer

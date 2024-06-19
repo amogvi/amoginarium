@@ -22,17 +22,22 @@ class TextEntity(pg.sprite.Sprite):
             _coalition,
             position: coord_t,
             text: str,
+            size: int = 64,
             color: Color | tColor = ...,
-            bg_color: Color | tColor = ...
+            bg_color: Color | tColor = ...,
+            bold: bool = False,
+            italic: bool = False,
+            font_family: str = "arial"
     ) -> None:
         if color is ...:
             color = Color.white(255)
 
         elif issubclass(type(color), tp.Iterable):
-            color = Color.from_255(*color)
+            tcolor = Color.from_255(*color)
+            color = tcolor
 
         if bg_color is ...:
-            bg_color = Color.from_255(0, 0, 0, 0)
+            bg_color = Color.black(0)
 
         elif issubclass(type(color), tp.Iterable):
             bg_color = Color.from_255(*bg_color)
@@ -40,16 +45,36 @@ class TextEntity(pg.sprite.Sprite):
         self._pos = convert_coord(position, Vec2)
         self._text = text
         self._color = color
+        self._size = size
+        self._bold = bold
+        self._italic = italic
+        self._font_family = font_family
         self._bg_color = bg_color
 
         super().__init__()
         self.add(Drawn)
 
-    def gl_draw(self):
-        now = self._pos - Updated.world_position
-        renderer.draw_text(
-            now,
+        # generate text surface once
+        self._regenerate_surface()
+
+    def _regenerate_surface(self) -> None:
+        """
+        update the pygame surface (on parameter change)
+        """
+        self._text_surf = renderer.generate_pg_surf_text(
             self._text,
             self._color,
-            self._bg_color
+            self._bg_color,
+            self._size,
+            self._font_family,
+            self._bold,
+            self._italic,
+        )
+
+    def gl_draw(self):
+        now = self._pos - Updated.world_position
+        renderer.draw_pg_surf(
+            now,
+            self._text_surf,
+            centered=False,
         )

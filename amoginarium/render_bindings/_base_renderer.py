@@ -8,6 +8,7 @@ Author:
 Nilusink
 """
 from PIL import Image
+import pygame as pg
 import typing as tp
 
 from ..logic import Color, coord_t
@@ -62,6 +63,7 @@ class BaseRenderer:
         """
         check if a rect is out of screen
         """
+        raise NotImplementedError
 
     def draw_circle(
             self,
@@ -129,6 +131,7 @@ class BaseRenderer:
         """
         draw a rect with rounded corners
         """
+        raise NotImplementedError
 
     def draw_text(
             self,
@@ -136,11 +139,41 @@ class BaseRenderer:
             text: str,
             color: Color | tColor,
             bg_color: Color | tColor,
-            centered: bool = False
+            centered: bool = False,
+            font_size: int = 64,
+            font_family: str = "arial",
+            bold: bool = False,
+            italic: bool = False
     ) -> tuple[int, int]:
         """
         draw a text to the given position
 
         :returns: the size of the drawn text
         """
-        ...
+        raise NotImplementedError
+
+    def draw_pg_surf(
+            self,
+            pos: coord_t,
+            surface: pg.Surface,
+            centered: bool = False
+    ) -> None:
+        """
+        draw a pygame surface
+        """
+        raise NotImplementedError
+
+    def generate_pg_surf_text(
+            self,
+            text: str,
+            color: Color | tColor,
+            bg_color: Color | tColor,
+            font_size: int = 64,
+            font_family: str = "arial",
+            bold: bool = False,
+            italic: bool = False
+    ) -> pg.Surface:
+        """
+        generates a pygame surface from a text
+        """
+        raise NotImplementedError
