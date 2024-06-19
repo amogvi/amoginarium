@@ -17,6 +17,7 @@ import dataclasses
 import aioconsole as aioc 
 import queue
 import time
+import enum
 
 msg_identify_struct = struct.Struct(">20s")
 @dataclasses.dataclass
@@ -43,6 +44,41 @@ class MsgUpdate:
     @classmethod
     def from_bytes(cls, data: bytes) -> "MsgUpdate":
         return cls(*msg_update_struct.unpack(data))
+
+
+class AnimCode(enum.Enum):
+    OFF = 0
+    STATIC = 1
+    FLASH = 2
+    BLINK = 3
+    SINGLE_FADE = 4
+    CYCLIC_FADE = 5
+
+msg_anim_cmd_struct = struct.Struct(">1sBBBBBBBBII")
+@dataclasses.dataclass
+class MsgAnimCmd:
+    layer: int
+    anim_code: AnimCode 
+    prim_color: tuple[int, int, int]
+    sec_color: tuple[int, int, int]
+    prim_period: int
+    sec_period: int
+    m: bytes = b"a"
+
+    def to_bytes(self) -> bytes:
+        return msg_anim_cmd_struct.pack(
+            self.m,
+            self.layer,
+            self.anim_code.value,
+            self.prim_color[0],
+            self.prim_color[1],
+            self.prim_color[2],
+            self.sec_color[0],
+            self.sec_color[1],
+            self.sec_color[2],
+            self.prim_period,
+            self.sec_period
+        )
 
 async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     global testrd, testwt
@@ -83,7 +119,7 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
                     times.appendleft(time.perf_counter())
                     t10 = times[0] - times[-1]
                     t = int((t10 / measure_span) * 1000)
-                    print(f"Update {t:03}ms: {msg}")
+                    #print(f"Update {t:03}ms: {msg}")
         
         except asyncio.IncompleteReadError:
             print("Closed ended during read, disconnecting")
@@ -132,7 +168,21 @@ async def main() -> int:
     
     while True:
         input = await aioc.ainput("")
-        if input == "q":
+        if input == "l":
+            animcmd = MsgAnimCmd(
+                layer=1,
+                anim_code=AnimCode.FLASH,
+                prim_color=(255, 0, 255),
+                sec_color=(0, 0, 0),
+                prim_period=80,
+                sec_period=0
+            )
+            print(animcmd)
+            msg = animcmd.to_bytes()
+            print(f"as bytes: {msg} (len={len(msg)})")
+            testwt.write(msg)
+            await testwt.drain()
+        elif input == "q":
             print("closing...")
             server.close()
             testwt.write(b'asdf')
