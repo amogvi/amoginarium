@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from time import perf_counter
-from icecream import ic
+# from icecream import ic
 import pygame as pg
 import typing as tp
 
@@ -402,6 +402,7 @@ class Player(LRImageEntity):
 
         # reset health
         self._hp = self._max_hp
+        self.weapon.reload(True)
 
         # reset position / velocity
         self.position = self._initial_position.copy()

@@ -234,4 +234,4 @@ class Minigun(ContinuousSoundEffect):
     _stage_one_name = "spool_up"
     _stage_two_name = "burst"
     _stage_three_name = "spool_down"
-    volume: float = .3
+    volume: float = .1

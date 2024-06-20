@@ -10,7 +10,6 @@ Nilusink
 import math
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
-from contextlib import suppress
 from icecream import ic
 import typing as tp
 import pygame as pg
