@@ -46,7 +46,7 @@ class _Controllers:
         """
         return cid in [c.id for c in self._controllers]
 
-    def get_by_id(self, cid: str) -> tp.Self | None:
+    def get_by_id(self, cid: str) -> tp.Union["Controller", None]:
         if not self.exists(cid):
             raise ValueError(f"No controller with id \"{cid}\" exists!")
 

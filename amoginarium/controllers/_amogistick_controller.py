@@ -52,6 +52,6 @@ class AmogistickController(Controller):
         #ic(joy_x, joy_y)
 
         # write button
-        self._keys.jump = self._keys.joy_y > .3 #aux_r_btn or aux_l_btn
+        self._keys.jump = self._keys.joy_y > .3 or aux_r_btn or aux_l_btn
         self._keys.shoot = trigger_btn
-        self._keys.reload = joy_btn or aux_r_btn or aux_l_btn   # map joy click to reload
+        self._keys.reload = joy_btn  # map joy click to reload

@@ -16,7 +16,7 @@ from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
 from ..base import Updated, Drawn
 from ._base_entity import LRImageEntity
-from ._weapons import Mortar as Weapon
+from ._weapons import Minigun as Weapon
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..controllers import Controller

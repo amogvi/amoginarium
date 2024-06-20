@@ -356,8 +356,10 @@ class BaseGame:
 
                 case pg.JOYDEVICEADDED:
                     joy = pg.joystick.Joystick(event.device_index)
-                    # GameController.get(msg.identifier)
-                    GameController.get(joy.get_guid(), joy)
+                    c = GameController.get(joy.get_guid(), joy)
+
+                    # re-assign pygame joystick instance
+                    c.set_joystick(joy)
 
                 case pg.KEYDOWN:
                     match event.key:
@@ -657,6 +659,9 @@ class BaseGame:
         """
         asyncio.run(self._server.run())
         ic("comms end")
+
+        # TODO: controller latency in graph
+
         return
 
     def mainloop(self) -> None:
