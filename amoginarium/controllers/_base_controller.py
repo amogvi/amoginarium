@@ -260,6 +260,11 @@ class Controller:
         if self.on_stop_rumble is not ...:
             self.on_stop_rumble()
 
+    def feedback_collide(self) -> None:
+        """
+        when the player hits a wall
+        """
+
     def feedback_shoot(self) -> None:
         """
         controller input on shoot

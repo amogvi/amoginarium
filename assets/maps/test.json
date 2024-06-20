@@ -62,7 +62,7 @@
     ],
     "entities": [
         {
-            "type": "turret.static.mortar",
+            "type": "turret.static.flak",
             "pos": [2850, 100]
         },
         {

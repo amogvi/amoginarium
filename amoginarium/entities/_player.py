@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from time import perf_counter
-from icecream import ic
+# from icecream import ic
 import pygame as pg
 import typing as tp
 
@@ -234,6 +234,9 @@ class Player(LRImageEntity):
             # collide with walls
             self._on_ground = on_top
             if on_top and self.velocity.y >= 0:
+                if self.velocity.y > 3:
+                    self._controller.feedback_collide()
+
                 self.acceleration.y = 0
                 self.velocity.y = 0
                 self.position.y -= 10
@@ -245,16 +248,25 @@ class Player(LRImageEntity):
                     self.position.y += 10
 
             if on_bottom and self.velocity.y <= 0:
+                if self.velocity.y < -3:
+                    self._controller.feedback_collide()
+
                 self.acceleration.y = 0
                 self.velocity.y = 0
                 self.position.y += 1
 
             if on_right and self.velocity.x >= 0:
+                if self.velocity.x > self._movement_acceleration:
+                    self._controller.feedback_collide()
+
                 self.acceleration.x = 0
                 self.velocity.x = 0
                 self.position.x -= 1
 
             if on_left and self.velocity.x <= 0:
+                if self.velocity.x < -self._movement_acceleration:
+                    self._controller.feedback_collide()
+
                 self.acceleration.x = 0
                 self.velocity.x = 0
                 self.position.x += 1
@@ -278,7 +290,6 @@ class Player(LRImageEntity):
 
         # jump
         if self._controller.jump and self.on_ground:
-            self._controller.rumble(300, 2000, 500)
             self.velocity.y = -400
 
         # reload
@@ -391,6 +402,7 @@ class Player(LRImageEntity):
 
         # reset health
         self._hp = self._max_hp
+        self.weapon.reload(True)
 
         # reset position / velocity
         self.position = self._initial_position.copy()

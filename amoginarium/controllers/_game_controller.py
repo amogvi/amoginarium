@@ -106,11 +106,17 @@ class GameController(Controller):
     ) -> None:
         self._joystick.rumble(low_frequency, high_frequency, duration)
 
+    def feedback_collide(self) -> None:
+        """
+        when the player hits a wall
+        """
+        self.rumble(1000, 2000, 150)
+
     def feedback_shoot(self) -> None:
         """
         controller input on shoot
         """
-        self.rumble(500, 3000, 100)
+        self.rumble(2000, 3000, 100)
 
     def feedback_hit(self) -> None:
         """

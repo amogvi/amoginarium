@@ -10,7 +10,6 @@ Nilusink
 import math
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
-from contextlib import suppress
 from icecream import ic
 import typing as tp
 import pygame as pg
@@ -384,7 +383,8 @@ class BaseGame:
 
         in_menu: bool = True
         has_started: bool = False
-        self.load_map("assets/maps/tutorial.json")
+        # self.load_map("assets/maps/tutorial.json")
+        self.load_map("assets/maps/test.json")
 
         def start_game():
             nonlocal in_menu, has_started

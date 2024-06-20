@@ -202,7 +202,7 @@
             "type": "instructions.text",
             "pos": [13000, 300],
             "args": {
-                "text": "No lets try something ...",
+                "text": "Now lets try something ...",
                 "size": 48,
                 "color": [0, 0, 0]
             }
