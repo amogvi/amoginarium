@@ -7,7 +7,7 @@ def main():
     game = BaseGame(debug=True, show_targets=False, time_multiplier=1)
 
     # create initial controller
-    KeyboardController()
+    KeyboardController.get()
 
     game.mainloop()
 

@@ -11,7 +11,7 @@ from time import perf_counter
 from random import randint
 import typing as tp
 # from threading import Thread
-# from icecream import ic
+from icecream import ic
 # import time
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
@@ -205,12 +205,12 @@ class Bullet(ImageEntity):
 
             if global_vars.show_targets and self._target_pos is not ...:
                 renderer.draw_line(
-                    self.position,
-                    self._target_pos,
+                    self.world_position,
+                    self._target_pos - Updated.world_position,
                     Color.from_255(255, 100, 0, 220)
                 )
                 renderer.draw_circle(
-                    self._target_pos,
+                    self._target_pos - Updated.world_position,
                     self.size.x * .5,
                     32,
                     Color.from_255(255, 100, 0, 220)
@@ -356,7 +356,7 @@ class BaseWeapon:
 
         # audio
         if self._sound_effect is not ...:
-            self._current_sound_time = self._recoil_time * 1
+            self._current_sound_time = self._recoil_time * 3
 
         if self._current_recoil_time > 0:
             return False
@@ -489,7 +489,7 @@ class Sniper(BaseWeapon):
             inaccuracy=.00500002,
             bullet_size=15,
             bullet_speed=2500,
-            bullet_damage=10,
+            bullet_damage=4,
             drop_casings=drop_casings,
             sound_effect=Shotgun
         )

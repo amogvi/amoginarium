@@ -46,7 +46,7 @@ class _Controllers:
         """
         return cid in [c.id for c in self._controllers]
 
-    def get_by_id(self, cid: str) -> tp.Self | None:
+    def get_by_id(self, cid: str) -> tp.Union["Controller", None]:
         if not self.exists(cid):
             raise ValueError(f"No controller with id \"{cid}\" exists!")
 
@@ -105,13 +105,19 @@ class Controller:
     _keys: controls
 
     def __new__(cls, *args, **kwargs):
-        if len(args) > 1:
-            cid = args[0]
-            if Controllers.exists(cid):
-                ic("re-linking already existing controller", cid)
-                return Controllers.get_by_id(cid)
+        return super(Controller, cls).__new__(cls)
 
-        new_instance = super(Controller, cls).__new__(cls)
+    @classmethod
+    def get(cls, cid: str, *args, **kwargs) -> "Controller":
+        ic("base get")
+        ic("called base cls.get with id ", cid)
+        if Controllers.exists(cid):
+            ic("re-linking already existing controller", cid)
+            return Controllers.get_by_id(cid)
+
+        ic("create instance in cls.get()")
+        ic(cid, args, kwargs)
+        new_instance = cls(cid, *args, **kwargs)
 
         # append every new instance to controllers
         Controllers.append(new_instance)
@@ -121,6 +127,13 @@ class Controller:
     def __init__(self, id: str) -> None:
         self._keys = controls()
         self._id = id
+        self.on_rumble: tp.Callable = ...
+        self.on_stop_rumble: tp.Callable = ...
+        self.on_feedback_shoot: tp.Callable = ...
+        self.on_feedback_hit: tp.Callable = ...
+        self.on_feedback_heal_start: tp.Callable = ...
+        self.on_feedback_heal_stop: tp.Callable = ...
+        self._heal_running = False
 
     @property
     def id(self) -> str:
@@ -237,11 +250,53 @@ class Controller:
         :param high_frequency:
         :param duration: duration in ms (0=inf)
         """
+        if self.on_rumble is not ...:
+            self.on_rumble(low_frequency, high_frequency, duration)
 
     def stop_rumble(self) -> None:
         """
         stop joystick vibration
         """
+        if self.on_stop_rumble is not ...:
+            self.on_stop_rumble()
+
+    def feedback_shoot(self) -> None:
+        """
+        controller input on shoot
+        """
+        if self.on_feedback_shoot is not ...:
+            self.on_feedback_shoot()
+
+    def feedback_hit(self) -> None:
+        """
+        controller input on hit
+        """
+        if self.on_feedback_hit is not ...:
+            self.on_feedback_hit()
+
+    def feedback_heal_start(self) -> None:
+        """
+        controller input on heal start
+        """
+        if self._heal_running:
+            return
+
+        self._heal_running = True
+
+        if self.on_feedback_heal_start is not ...:
+            self.on_feedback_heal_start()
+
+    def feedback_heal_stop(self) -> None:
+        """
+        controller input on heal stop 
+        """
+        if not self._heal_running:
+            return
+
+        self._heal_running = False
+
+        if self.on_feedback_heal_stop is not ...:
+            self.on_feedback_heal_stop()
 
     def __str__(self) -> str:
         return f"<{self.__class__.__name__}, id=\"{self.id}\">"

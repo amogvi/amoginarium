@@ -8,12 +8,13 @@ Author:
 Nilusink
 """
 from time import perf_counter
-# from icecream import ic
+from icecream import ic
 import pygame as pg
 import typing as tp
 
 from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
+from ..base import Updated, Drawn
 from ._base_entity import LRImageEntity
 from ._weapons import Minigun as Weapon
 from ..render_bindings import renderer
@@ -40,8 +41,9 @@ class Player(LRImageEntity):
     _player_oob_left_1_texture: int = ...
     _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
-    _heal_per_second: float = 1.5
-    _time_to_heal: float = 10
+    _heal_per_second: float = 2
+    _time_to_heal: float = 5
+    _max_speed: float = 1000
     _max_hp: int = 80
     _hp: int = 0
 
@@ -99,9 +101,12 @@ class Player(LRImageEntity):
 
         self._controller = controller
         self._on_ground = False
+        self._alive = True
 
         if initial_position is ...:
             initial_position = Players.spawn_point
+
+        self._initial_position = initial_position.copy()
 
         # load textures
         if size == 64:
@@ -163,11 +168,21 @@ class Player(LRImageEntity):
     def parent(self) -> tp.Self:
         return self
 
+    @property
+    def alive(self) -> bool:
+        """
+        checks if the player is alive
+        """
+        return self._alive
+
     def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
         deal damage to the player
         """
         self._hp -= damage
+
+        if damage != 0:
+            self._controller.feedback_hit()
 
         # check for player death
         if self._hp <= 0:
@@ -176,6 +191,7 @@ class Player(LRImageEntity):
 
         # update last hit
         self._last_hit = perf_counter()
+        self._controller.feedback_heal_stop()
 
     def collide_wall(self, wall: Island):
         return wall.get_collided_sides(
@@ -245,34 +261,49 @@ class Player(LRImageEntity):
 
         # update controls
         self._controller.update(delta)
+
+        # accelerate right
         if self._controller.joy_x > 0:
-            self.acceleration.x += self._movement_acceleration
+            if self.velocity.x < self._max_speed:
+                self.acceleration.x += self._movement_acceleration
+
             self.facing.x = 1
 
+        # accelerate left
         elif self._controller.joy_x < 0:
-            self.acceleration.x -= self._movement_acceleration
+            if self.velocity.x > -self._max_speed:
+                self.acceleration.x -= self._movement_acceleration
+
             self.facing.x = -1
 
+        # jump
         if self._controller.jump and self.on_ground:
             self._controller.rumble(300, 2000, 500)
             self.velocity.y = -400
 
+        # reload
         if self._controller.reload:
             self.weapon.reload()
 
         # directional stuff
+        # shoot
         if self._controller.shoot:
             # shoot a bit up
             shot_direction = self.facing.copy()
             shot_direction.y = -.4
-            self.weapon.shoot(
+            if self.weapon.shoot(
                 shot_direction
-            )
+            ):
+                self._controller.feedback_shoot()
 
         # heal
-        if self._hp < self._max_hp:
-            if perf_counter() - self._last_hit > self._time_to_heal:
+        if perf_counter() - self._last_hit > self._time_to_heal:
+            if self._hp < self._max_hp:
                 self._hp += self._heal_per_second * delta
+                self._controller.feedback_heal_start()
+            else:
+                self._controller.feedback_heal_stop()
+        
 
         # run update from parent classes
         super().update(delta)
@@ -327,3 +358,43 @@ class Player(LRImageEntity):
             return
 
         super().gl_draw()
+
+    def kill(self, killed_by=...) -> None:
+        """
+        remove player from almost all groups
+        """
+        # set state to dead
+        self._alive = False
+
+        # remove from every group except players
+        super().kill(killed_by)
+        self.add(Players)
+
+    def respawn(self, pos: Vec2 = ...) -> None:
+        """
+        respawn the player
+        """
+        # update status to alive
+        self._alive = True
+
+        # re-add player to all groups
+        self.add(
+            CollisionDestroyed,
+            FrictionXAffected,
+            GravityAffected,
+            WallCollider,
+            Players,
+            HasBars,
+            Updated,
+            Drawn
+        )
+
+        # reset health
+        self._hp = self._max_hp
+
+        # reset position / velocity
+        self.position = self._initial_position.copy()
+        self.velocity *= 0
+
+        if pos is not ...:
+            self.position = pos.copy()

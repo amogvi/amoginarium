@@ -7,6 +7,7 @@ Defines the core game
 Author:
 Nilusink
 """
+import math
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter, strftime
 from contextlib import suppress
@@ -23,7 +24,7 @@ from ._groups import HasBars, WallBouncer, CollisionDestroyed, Bullets, Players
 from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
 from ..entities import Player, Island, Bullet, BaseTurret, FlakTurret
-from ..entities import CRAMTurret
+from ..entities import CRAMTurret, TextEntity
 from ..controllers import Controllers, Controller, GameController
 from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
@@ -32,9 +33,10 @@ from ..logic import SimpleLock, Color, Vec2
 from ..audio import sounds, sound_effects
 from ..render_bindings import renderer
 from ..audio import BackgroundPlayer
-from ..communications import Server
+from ..communications import TCPServer
 from ..animations import explosion
 from ._textures import textures
+from ..ui import Button
 
 
 class BoundFunction(tp.TypedDict):
@@ -44,6 +46,9 @@ class BoundFunction(tp.TypedDict):
 
 
 def current_time() -> str:
+    """
+    helper function for IC debugging
+    """
     ms = str(round(perf_counter(), 4)).split(".")[1]
     return f"{strftime('%H:%M:%S')}.{ms: <4} |> "
 
@@ -55,6 +60,7 @@ SPAWNABLES: dict[str, tp.Type[BaseTurret]] = {
     "turret.static.mortar": MortarTurret,
     "turret.static.flak": FlakTurret,
     "turret.static.cram": CRAMTurret,
+    "instructions.text": TextEntity
 }
 
 
@@ -82,6 +88,7 @@ class BaseGame:
     ) -> None:
         global_vars.show_targets = show_targets
         self.time_multiplier = time_multiplier
+        self._last_loaded = ...
         self._shifting = False
 
         # configure icecream
@@ -118,7 +125,7 @@ class BaseGame:
         # self._in_next_loop: list[BoundFunction] = []
 
         # server setup
-        self._server = Server(("0.0.0.0", game_port))
+        self._server = TCPServer(("0.0.0.0", game_port))
 
         # initialize pygame (logic) and renderer
         pg.init()
@@ -127,6 +134,7 @@ class BaseGame:
 
         # initialize background
         self._background = ...
+        self._bg_color = (0, 0, 0)
         self._background_player = BackgroundPlayer()
         self._background_player.volume = .6
 
@@ -141,16 +149,31 @@ class BaseGame:
                 )(getattr(self, func))
             )
 
-        self._background = ParalaxBackground(
-            "bg3",
-            *global_vars.screen_size.xy,
-            parallax_multiplier=1.6,
-            # animated_layers=[4, 6]
-        )
+        self._backgrounds = [
+            ParalaxBackground(
+                "bg1",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg2",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg3",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            ),
+            ParalaxBackground(
+                "bg4",
+                *global_vars.screen_size.xy,
+                parallax_multiplier=1.6,
+            )
+        ]
 
         # load map
         self.preload()
-        self.load_map("assets/maps/test.json")
 
         self._game_start = 0
 
@@ -169,10 +192,13 @@ class BaseGame:
 
         # load entity textures
         textures.load_images("assets/images/textures.zip")
+        textures.load_images("assets/images/dirt_islands.zip")
+        textures.load_images("assets/images/bg1.zip")
+        textures.load_images("assets/images/bg2.zip")
         textures.load_images("assets/images/bg3.zip")
+        textures.load_images("assets/images/bg4.zip")
         textures.load_images("assets/images/animations/explosion.zip")
 
-        self._background.load_textures()
         Island.load_textures()
         Player.load_textures()
         Bullet.load_textures()
@@ -200,10 +226,21 @@ class BaseGame:
 
         # load map data
         data = json.load(open(map_path, "r"))
+        self._last_loaded = map_path
 
         pg.display.set_caption(f"amoginarium - {data["name"]}")
-        self._bg_color = Color.to_1(*data["background"])
         Players.spawn_point = Vec2.from_cartesian(*data["spawn_pos"])
+
+        # set background
+        if 0 <= data["background"]-1 <= len(self._backgrounds):
+            self._background = self._backgrounds[data["background"]-1]
+
+        else:
+            self._background = self._backgrounds[0]
+
+        # check if background has been assigned
+        if not self._background.loaded:
+            self._background.load_textures()
 
         # # spwan a lot of bulllets
         # Players.spawn_point = Vec2.from_cartesian(950, -100)
@@ -252,9 +289,24 @@ class BaseGame:
                 )
                 continue
 
-            SPAWNABLES[entity["type"]](Coalitions.red, Vec2.from_cartesian(
-                *entity["pos"]
-            ))
+            # check if arguments were given
+            args = {}
+            if "args" in entity:
+                args = entity["args"]
+
+            try:
+                SPAWNABLES[entity["type"]](
+                    Coalitions.red,
+                    Vec2.from_cartesian(*entity["pos"]),
+                    **args
+                )
+
+            except TypeError:
+                print_ic_style(
+                    f"{CC.fg.RED}invalid arguments for "
+                    f"{CC.fg.YELLOW}{entity["type"]}{CC.fg.RED}: "
+                    f"\"{CC.fg.YELLOW}{args}{CC.fg.RED}\""
+                )
 
     def time_since_start(self) -> str:
         """
@@ -291,6 +343,37 @@ class BaseGame:
         self._new_controllers.append(controller)
         self._new_controllers_lock.release()
 
+    def handle_events(self) -> list[str]:
+        """
+        handles pygame events
+        """
+        out = []
+        for event in pg.event.get():
+            match event.type:
+                case pg.QUIT:
+                    ic("pygame end")
+                    self.end()
+
+                case pg.JOYDEVICEADDED:
+                    joy = pg.joystick.Joystick(event.device_index)
+                    c = GameController.get(joy.get_guid(), joy)
+
+                    # re-assign pygame joystick instance
+                    c.set_joystick(joy)
+
+                case pg.KEYDOWN:
+                    match event.key:
+                        case pg.K_ESCAPE:
+                            out.append("escape")
+
+                        case pg.K_r:
+                            out.append("r")
+
+                        case pg.K_c:
+                            out.append("c")
+
+        return out
+
     def _run_pygame(self) -> None:
         """
         start pygame
@@ -299,6 +382,53 @@ class BaseGame:
         last_fps_print = 0
         clock = pg.time.Clock()
 
+        in_menu: bool = True
+        has_started: bool = False
+        self.load_map("assets/maps/tutorial.json")
+
+        def start_game():
+            nonlocal in_menu, has_started
+            # self._background.reset_scroll()
+            widgets[0]._text = "Continue"
+            in_menu = False
+            has_started = True
+
+        def reset_game():
+            nonlocal in_menu
+            for entity in Updated.sprites():
+                entity.kill()
+
+            self._background.reset_scroll()
+            global_vars.reset()
+            Updated.world_position *= 0
+
+            self.load_map(self._last_loaded)
+
+            # respawn players
+            for player in Players.sprites():
+                player.respawn()
+
+            in_menu = False
+
+        widgets = [
+            Button(
+                (760, 390),
+                (400, 150),
+                "Start",
+                Color.from_255(100, 100, 100),
+                start_game,
+                20
+            ),
+            Button(
+                (760, 600),
+                (400, 150),
+                "Restart",
+                Color.from_255(100, 100, 100),
+                reset_game,
+                20
+            )
+        ]
+
         # draw background once
         while self.running:
             # total delta since last call
@@ -306,6 +436,44 @@ class BaseGame:
             delta = now-last
 
             delta *= self.time_multiplier  # slow-motion
+
+            if in_menu:
+                pressed = self.handle_events()
+
+                if "escape" in pressed or "c" in pressed:
+                    start_game()
+                    continue
+
+                elif "r" in pressed:
+                    reset_game()
+                    continue
+
+                # update background music
+                try:  # throws error on game end
+                    self._background_player.update()
+
+                except pg.error:
+                    break
+
+                self._background.scroll(delta / 200)
+                self._background.draw(delta)
+
+                if has_started:
+                    Drawn.gl_draw()
+                    HasBars.gl_draw()
+
+                    for widget in widgets:
+                        widget.gl_draw()
+
+                else:
+                    widgets[0].gl_draw()
+
+                pg.display.flip()
+                clock.tick(global_vars.max_fps)
+
+                self._game_start = perf_counter()
+                last = now
+                continue
 
             # update logic
             self._update_logic(delta, now)
@@ -319,26 +487,21 @@ class BaseGame:
                 last_fps_print = now
 
             # handle events
-            for event in pg.event.get():
-                match event.type:
-                    case pg.QUIT:
-                        ic("pygame end")
-                        return self.end()
-
-                    case pg.JOYDEVICEADDED:
-                        joy = pg.joystick.Joystick(event.device_index)
-                        GameController(joy.get_guid(), joy)
+            pressed = self.handle_events()
+            if "escape" in pressed:
+                in_menu = True
 
             # update background music
-            self._background_player.update()
+            try:  # throws error on game end
+                self._background_player.update()
+
+            except pg.error:
+                break
 
             # clear screen
             glClearColor(0, 0, 0, 1)
-            # self.screen.fill((0, 0, 0, 0))
-            # self.middle_layer.fill((0, 0, 0, 0))
-            # self.top_layer.fill((0, 0, 0, 0))
 
-            min_player_pos, max_player_pos = Players.get_position_extremes()
+            _, max_player_pos = Players.get_position_extremes()
 
             # background_pos_left = self._background.position + 60
 
@@ -347,7 +510,17 @@ class BaseGame:
                                        + global_vars.screen_size.x - 1400
 
                 if max_player_pos.x > background_pos_right:
-                    self._background.scroll(delta * 3)
+                    # world speed coefficient:
+                    # V(x)=ℯ^( ( (1400-x) / 800 )^2 )
+
+                    speed_coeff = (abs((
+                        self._background.position
+                        + global_vars.screen_size.x
+                        - 1400
+                    ) - max_player_pos.x) / 800) ** 2
+                    speed_coeff = math.exp(speed_coeff)
+
+                    self._background.scroll(delta * 3 * speed_coeff)
                     Updated.world_position.x = self._background.position
 
                 else:
@@ -355,7 +528,7 @@ class BaseGame:
 
             else:
                 background_pos_right = self._background.position \
-                                       + global_vars.screen_size.x - 500
+                                       + global_vars.screen_size.x - 900
 
                 if max_player_pos.x > background_pos_right:
                     self._background.scroll(delta * 3)
@@ -368,6 +541,8 @@ class BaseGame:
 
             # draw background
             self._background.draw(delta)
+
+            # global_vars.pixel_per_meter *= .999
 
             # handle groups
             Drawn.gl_draw()
@@ -484,6 +659,9 @@ class BaseGame:
         """
         asyncio.run(self._server.run())
         ic("comms end")
+
+        # TODO: controller latency in graph
+
         return
 
     def mainloop(self) -> None:
@@ -493,7 +671,7 @@ class BaseGame:
         self._game_start = perf_counter()
 
         # self._pool.submit(self._run_logic)
-        # self._pool.submit(self._run_comms)
+        self._pool.submit(self._run_comms)
         self._run_pygame()
 
     @run_with_debug()
@@ -509,8 +687,8 @@ class BaseGame:
         self.running = False
 
         # tell server to shutdown
-        with suppress(RuntimeError):
-            self._server.close()
+        #with suppress(RuntimeError):
+        self._server.close()
 
         ic("stopping game...")
 

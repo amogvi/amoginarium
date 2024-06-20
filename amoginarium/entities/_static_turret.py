@@ -127,7 +127,10 @@ class BaseTurret(VisibleEntity):
         # scan for targets and engage the closest one
         targets = []
         if self.intercept_players:
-            targets.extend(Players.sprites())
+            # only add living playerse
+            targets.extend(
+                [p for p in Players.sprites() if p.alive]
+            )
 
         if self.intercept_bullets:
             targets.extend(Bullets.sprites())
@@ -276,11 +279,11 @@ class BaseTurret(VisibleEntity):
             if self._target_predict is not ...:
                 renderer.draw_line(
                     self.world_position,
-                    global_vars.translate_screen_coord(self._target_predict),
+                    self._target_predict - Updated.world_position,
                     Color.from_255(50, 200, 0, 100)
                 )
                 renderer.draw_circle(
-                    global_vars.translate_screen_coord(self._target_predict),
+                    self._target_predict - Updated.world_position,
                     global_vars.translate_scale(32),
                     32,
                     Color.from_255(50, 200, 0, 100)

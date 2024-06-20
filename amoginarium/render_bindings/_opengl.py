@@ -11,7 +11,7 @@ from OpenGL.GL import glTranslate, glMatrixMode, glLoadIdentity, glTexCoord2f
 from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
 from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f, glEnd
 from OpenGL.GL import glDisable, glBegin, glVertex, glFlush, glClearColor
-from OpenGL.GL import glBlendFunc
+from OpenGL.GL import glBlendFunc, glWindowPos2d, glDrawPixels
 from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT, GL_LINES
 from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_POLYGON
@@ -23,6 +23,7 @@ from icecream import ic
 from PIL import Image
 import pygame as pg
 import numpy as np
+import math as m
 
 from ..logic import Vec2, Color, convert_coord
 from ._base_renderer import BaseRenderer, tColor
@@ -34,10 +35,45 @@ type TextureID = int
 
 
 class OpenGLRenderer(BaseRenderer):
+    def _get_font(
+            self,
+            size: int,
+            family: str,
+            bold: bool = False,
+            italic: bool = False
+    ) -> pg.font.Font:
+        # check if font exists
+        if size in self._fonts:
+            for font in self._fonts[size]:
+                if all([
+                    font.name == family,
+                    font.bold == bold,
+                    font.italic == italic
+                ]):
+                    return font
+
+        else:
+            self._fonts[size] = []
+
+        # no font found, create new
+        new_font = pg.font.SysFont(family, size, bold, italic)
+        self._fonts[size].append(new_font)
+
+        return new_font
+
     def init(self, title):
         ic("using OpenGL backend")
 
         pg.font.init()
+
+        self._fonts = {
+            32: [
+                pg.font.SysFont('arial', 32)
+            ],
+            64: [
+                pg.font.SysFont('arial', 64)
+            ]
+        }
 
         # get screen size
         screen_info = pg.display.Info()
@@ -67,7 +103,7 @@ class OpenGLRenderer(BaseRenderer):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     @staticmethod
-    def set_color(color: Color | tColor) -> None:
+    def set_color(color: Color | tColor) -> Color:
         """
         set gColor
         """
@@ -79,6 +115,8 @@ class OpenGLRenderer(BaseRenderer):
             else:
                 glColor3f(*color.rgb1)
 
+            return color
+
         # color as tuple
         else:
             if len(color) == 3:
@@ -89,6 +127,27 @@ class OpenGLRenderer(BaseRenderer):
 
             else:
                 raise ValueError("Invalid color: ", color)
+
+            return Color.from_1(*color)
+
+    @staticmethod
+    def check_out_of_screen(
+            pos,
+            size,
+    ) -> bool:
+        """
+        check if a rect is on the screen
+        """
+        pos = convert_coord(pos, Vec2)
+        size = convert_coord(size, Vec2)
+
+        return False
+
+        # 200 for buffering
+        return any([
+            pos.x > global_vars.screen_size.x + 200,
+            pos.x + size.x < -200
+        ])
 
     @staticmethod
     def load_texture(
@@ -146,6 +205,10 @@ class OpenGLRenderer(BaseRenderer):
             pos = global_vars.translate_screen_coord(pos)
             size = global_vars.translate_scale(size)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(pos, size):
+            return
+
         # reset color
         glColor3f(1, 1, 1)
 
@@ -186,6 +249,10 @@ class OpenGLRenderer(BaseRenderer):
             center = global_vars.translate_screen_coord(center)
             radius = global_vars.translate_scale(radius)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(center, (radius, 0)):
+            return
+
         glLoadIdentity()  # reset previous glTranslate statements
         glTranslate(center.x, center.y, 0)
 
@@ -214,6 +281,10 @@ class OpenGLRenderer(BaseRenderer):
             start = global_vars.translate_screen_coord(start)
             size = global_vars.translate_scale(size)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, size):
+            return
+
         glLoadIdentity()  # reset previous glTranslate statements
         glTranslate(start.x, start.y, 0)
 
@@ -240,6 +311,10 @@ class OpenGLRenderer(BaseRenderer):
         if convert_global:
             center = global_vars.translate_screen_coord(center)
             radius = global_vars.translate_scale(radius)
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(center, (radius + thickness, 0)):
+            return
 
         glLoadIdentity()
         glTranslate(center.x, center.y, 0)
@@ -287,6 +362,10 @@ class OpenGLRenderer(BaseRenderer):
             start = global_vars.translate_screen_coord(start)
             end = global_vars.translate_scale(end)
 
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, end - start):
+            return
+
         if global_position:
             glLoadIdentity()  # reset previous glTranslate statements
 
@@ -296,3 +375,150 @@ class OpenGLRenderer(BaseRenderer):
         glVertex2f(*start.xy)
         glVertex2f(*end.xy)
         glEnd()
+
+    def draw_rounded_rect(
+            self,
+            start,
+            size,
+            color,
+            radius,
+    ) -> None:
+        start = convert_coord(start, Vec2)
+        size = convert_coord(size, Vec2)
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(start, size):
+            return
+
+        # circles at edges
+        self.draw_circle(
+            start + radius,
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            start + size - radius,
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            (
+                start.x + size.x - radius,
+                start.y + radius
+            ),
+            radius,
+            m.ceil(radius),
+            color
+        )
+        self.draw_circle(
+            (
+                start.x + radius,
+                start.y + size.y - radius
+            ),
+            radius,
+            m.ceil(radius),
+            color
+        )
+
+        # fill in squares
+        if size.x > 2 * radius:
+            self.draw_rect(
+                (
+                    start.x + radius,
+                    start.y
+                ),
+                (
+                    size.x - 2 * radius,
+                    size.y
+                ),
+                color
+            )
+
+        if size.y > 2 * radius:
+            self.draw_rect(
+                (
+                    start.x,
+                    start.y + radius
+                ),
+                (
+                    size.x,
+                    size.y - 2 * radius
+                ),
+                color
+            )
+
+    def draw_text(
+            self,
+            pos,
+            text,
+            color,
+            bg_color,
+            centered=False,
+            font_size=64,
+            font_family="arial",
+            bold=False,
+            italic=False
+    ):
+        bg_color = self.set_color(bg_color)
+        color = self.set_color(color)
+
+        # weird conversion because pygame is ass
+        text_surface: pg.Surface = self.generate_pg_surf_text(
+            text, color, bg_color, font_size, font_family, bold, italic
+        )
+        # text_surface.set_alpha(color.a)
+
+        # draw text
+        self.draw_pg_surf(pos, text_surface, centered)
+
+        return text_surface.get_size()
+
+    def generate_pg_surf_text(
+            self,
+            text,
+            color,
+            bg_color,
+            font_size=64,
+            font_family="arial",
+            bold=False,
+            italic=False
+    ):
+        return self._get_font(
+            font_size,
+            font_family,
+            bold,
+            italic
+        ).render(
+            text,
+            True,
+            color.rgb255,
+            bg_color.rgb255 if bg_color.a > 125 else None
+        )
+
+    def draw_pg_surf(self, pos, surface, centered=False):
+        pos = convert_coord(pos, Vec2)
+
+        text_data = pg.image.tostring(surface, "RGBA", True)
+        text_size: tuple[int, int] = surface.get_size()
+
+        pos.y = global_vars.screen_size.y - pos.y
+
+        if centered:
+            pos.x -= text_size[0] / 2
+            pos.y -= text_size[1] / 2
+
+        # only draw if on screen
+        if OpenGLRenderer.check_out_of_screen(pos, text_size):
+            return
+
+        glWindowPos2d(*pos.xy)
+        glDrawPixels(
+            surface.get_width(),
+            surface.get_height(),
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            text_data
+        )
+

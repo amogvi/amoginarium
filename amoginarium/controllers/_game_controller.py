@@ -8,19 +8,40 @@ Author:
 Nilusink
 """
 from dataclasses import dataclass
+# from icecream import ic
 import pygame as pg
 
 from ._base_controller import Controller
 
 
+# switch controller
 @dataclass(frozen=True)
-class ControllerKeybmap:
+class ControllerKeymap:
     y: int = 0
     b: int = 1
     a: int = 2
     x: int = 3
     l1: int = 4
     r1: int = 5
+    l2: int = 6
+    r2: int = 7
+    lopt: int = 8
+    ropt: int = 9
+    ljoy: int = 10
+    rjoy: int = 11
+    menu: int = 12
+
+
+# PS4 controller
+@dataclass(frozen=True)
+class ControllerKeybmap:
+    y: int = 0
+    b: int = 3
+    a: int = 0
+    x: int = 3
+    l1: int = 4
+    r1: int = 10
+    r2_axis: int = 5
     l2: int = 6
     r2: int = 7
     lopt: int = 8
@@ -46,6 +67,12 @@ class GameController(Controller):
 
         super().__init__(id)
 
+    def set_joystick(self, joystick: pg.joystick.JoystickType) -> None:
+        """
+        re-assign the pygame joystick
+        """
+        self._joystick = joystick
+
     def btn(self, n_button: int) -> bool:
         """
         get a joystick button
@@ -54,7 +81,7 @@ class GameController(Controller):
 
     def update(self, delta):
         # read controls
-        self._keys.shoot = self.btn(ControllerKeybmap.r2)
+        self._keys.shoot = self.btn(ControllerKeybmap.r2) or self.btn(ControllerKeybmap.r1) or self._joystick.get_axis(ControllerKeybmap.r2_axis) > 0
         self._keys.reload = self.btn(ControllerKeybmap.b)
         self._keys.jump = self.btn(ControllerKeybmap.a)
         self._keys.idk = self.btn(ControllerKeybmap.x)
@@ -78,6 +105,18 @@ class GameController(Controller):
             duration
     ) -> None:
         self._joystick.rumble(low_frequency, high_frequency, duration)
+
+    def feedback_shoot(self) -> None:
+        """
+        controller input on shoot
+        """
+        self.rumble(500, 3000, 100)
+
+    def feedback_hit(self) -> None:
+        """
+        controller input on hit
+        """
+        self.rumble(300, 2200, 300)
 
     def stop_rumble(self) -> None:
         self._joystick.stop_rumble()

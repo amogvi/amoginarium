@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 assets/images/textures/
+assets/images/dirt_islands/
 **/layers/
 **/_images/
 *.lprof
@@ -136,3 +137,4 @@ dmypy.json
 .idea/
 .vscode/
 debug.json
+basics_erste_klasse.py
