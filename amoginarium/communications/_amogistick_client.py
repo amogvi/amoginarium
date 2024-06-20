@@ -134,9 +134,9 @@ class AmogistickClient:
             self._controller.on_feedback_heal_start = lambda: self.send_message(MsgAnimCmd(
                 3, 
                 AnimCode.CYCLIC_FADE, 
-                (50, 255, 0), 
                 (0, 0, 0),
-                60, 
+                (40, 180, 0),
+                60,
                 200,
                 True
             ))
@@ -191,7 +191,7 @@ class AmogistickClient:
     
     def send_message(self, msg: MsgAnimCmd ) -> None:  # and possibly more in the future
         self._writer.write(msg.to_bytes())
-        ic("send: ", msg.to_bytes())
+        # ic("send: ", msg.to_bytes())
         asyncio.get_event_loop().create_task(self._writer.drain())
     
     async def close(self) -> None:

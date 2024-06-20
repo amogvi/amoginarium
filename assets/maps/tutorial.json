@@ -254,7 +254,7 @@
         },
         {
             "type": "instructions.text",
-            "pos": [19500, 500],
+            "pos": [20000, 300],
             "args": {
                 "text": "Flak",
                 "size": 64,

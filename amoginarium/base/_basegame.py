@@ -356,7 +356,8 @@ class BaseGame:
 
                 case pg.JOYDEVICEADDED:
                     joy = pg.joystick.Joystick(event.device_index)
-                    GameController(joy.get_guid(), joy)
+                    # GameController.get(msg.identifier)
+                    GameController.get(joy.get_guid(), joy)
 
                 case pg.KEYDOWN:
                     match event.key:

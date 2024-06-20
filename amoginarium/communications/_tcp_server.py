@@ -69,6 +69,7 @@ class TCPServer:
         await server.start_serving()
         try:
             await self._stop
+
         except asyncio.CancelledError:
             ic("amogistick TCP server canceled")
         finally:

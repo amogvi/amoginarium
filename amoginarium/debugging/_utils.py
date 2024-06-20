@@ -23,7 +23,10 @@ def get_caller_name() -> str:
     return calframe[1][3]
 
 
-def print_ic_style(*values, sep=" ") -> str:
+def print_ic_style(*values, sep=" ") -> None:
+    if not ic.enabled:
+        return
+
     prefix = ic.prefix
     if not isinstance(prefix, str):
         prefix = prefix()

@@ -16,7 +16,7 @@ from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
 from ..base import Updated, Drawn
 from ._base_entity import LRImageEntity
-from ._weapons import Minigun as Weapon
+from ._weapons import Mortar as Weapon
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..controllers import Controller
@@ -41,8 +41,8 @@ class Player(LRImageEntity):
     _player_oob_left_1_texture: int = ...
     _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
-    _heal_per_second: float = 1.5
-    _time_to_heal: float = 10
+    _heal_per_second: float = 2
+    _time_to_heal: float = 5
     _max_speed: float = 1000
     _max_hp: int = 80
     _hp: int = 0
@@ -191,6 +191,7 @@ class Player(LRImageEntity):
 
         # update last hit
         self._last_hit = perf_counter()
+        self._controller.feedback_heal_stop()
 
     def collide_wall(self, wall: Island):
         return wall.get_collided_sides(
