@@ -191,7 +191,7 @@ class AmogistickClient:
     
     def send_message(self, msg: MsgAnimCmd ) -> None:  # and possibly more in the future
         self._writer.write(msg.to_bytes())
-        #ic("send: ", msg.to_bytes())
+        ic("send: ", msg.to_bytes())
         asyncio.get_event_loop().create_task(self._writer.drain())
     
     async def close(self) -> None:

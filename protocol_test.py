@@ -121,7 +121,7 @@ async def handle_echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
                     times.appendleft(time.perf_counter())
                     t10 = times[0] - times[-1]
                     t = int((t10 / measure_span) * 1000)
-                    #print(f"Update {t:03}ms: {msg}")
+                    print(f"Update {t:03}ms: {msg}")
         
         except asyncio.IncompleteReadError:
             print("Closed ended during read, disconnecting")
