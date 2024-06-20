@@ -11,7 +11,7 @@ from time import perf_counter
 from random import randint
 import typing as tp
 # from threading import Thread
-# from icecream import ic
+from icecream import ic
 # import time
 
 from ..base import GravityAffected, CollisionDestroyed, Bullets, Updated, Drawn
@@ -356,7 +356,7 @@ class BaseWeapon:
 
         # audio
         if self._sound_effect is not ...:
-            self._current_sound_time = self._recoil_time * 1.5
+            self._current_sound_time = self._recoil_time * 3
 
         if self._current_recoil_time > 0:
             return False

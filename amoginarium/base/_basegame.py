@@ -33,7 +33,7 @@ from ..logic import SimpleLock, Color, Vec2
 from ..audio import sounds, sound_effects
 from ..render_bindings import renderer
 from ..audio import BackgroundPlayer
-from ..communications import Server
+from ..communications import TCPServer
 from ..animations import explosion
 from ._textures import textures
 from ..ui import Button
@@ -125,7 +125,7 @@ class BaseGame:
         # self._in_next_loop: list[BoundFunction] = []
 
         # server setup
-        self._server = Server(("0.0.0.0", game_port))
+        self._server = TCPServer(("0.0.0.0", game_port))
 
         # initialize pygame (logic) and renderer
         pg.init()
@@ -356,7 +356,10 @@ class BaseGame:
 
                 case pg.JOYDEVICEADDED:
                     joy = pg.joystick.Joystick(event.device_index)
-                    GameController(joy.get_guid(), joy)
+                    c = GameController.get(joy.get_guid(), joy)
+
+                    # re-assign pygame joystick instance
+                    c.set_joystick(joy)
 
                 case pg.KEYDOWN:
                     match event.key:
@@ -656,6 +659,9 @@ class BaseGame:
         """
         asyncio.run(self._server.run())
         ic("comms end")
+
+        # TODO: controller latency in graph
+
         return
 
     def mainloop(self) -> None:
@@ -665,7 +671,7 @@ class BaseGame:
         self._game_start = perf_counter()
 
         # self._pool.submit(self._run_logic)
-        # self._pool.submit(self._run_comms)
+        self._pool.submit(self._run_comms)
         self._run_pygame()
 
     @run_with_debug()
@@ -681,8 +687,8 @@ class BaseGame:
         self.running = False
 
         # tell server to shutdown
-        with suppress(RuntimeError):
-            self._server.close()
+        #with suppress(RuntimeError):
+        self._server.close()
 
         ic("stopping game...")
 

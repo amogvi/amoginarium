@@ -8,6 +8,7 @@ Author:
 Nilusink
 """
 from dataclasses import dataclass
+import typing as tp
 import pygame as pg
 
 from ._base_controller import Controller
@@ -23,7 +24,11 @@ class Keyboardcontrols:
 
 
 class KeyboardController(Controller):
-    def __init__(self) -> None:
+    @classmethod
+    def get(cls) -> tp.Self:
+        return super().get("0")
+
+    def __init__(self, *_, **__) -> None:
         super().__init__("0")
 
         self._controls = Keyboardcontrols()

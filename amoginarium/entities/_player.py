@@ -8,7 +8,7 @@ Author:
 Nilusink
 """
 from time import perf_counter
-# from icecream import ic
+from icecream import ic
 import pygame as pg
 import typing as tp
 
@@ -41,8 +41,8 @@ class Player(LRImageEntity):
     _player_oob_left_1_texture: int = ...
     _player_oob_left_2_texture: int = ...
     _movement_acceleration: float = 700
-    _heal_per_second: float = 1.5
-    _time_to_heal: float = 10
+    _heal_per_second: float = 2
+    _time_to_heal: float = 5
     _max_speed: float = 1000
     _max_hp: int = 80
     _hp: int = 0
@@ -97,7 +97,7 @@ class Player(LRImageEntity):
         size: int = 64
 
     ) -> None:
-        self._hp = 9999999999999999 #self._max_hp
+        self._hp = self._max_hp
 
         self._controller = controller
         self._on_ground = False
@@ -181,7 +181,8 @@ class Player(LRImageEntity):
         """
         self._hp -= damage
 
-        self._controller.feedback_hit()
+        if damage != 0:
+            self._controller.feedback_hit()
 
         # check for player death
         if self._hp <= 0:
@@ -190,6 +191,7 @@ class Player(LRImageEntity):
 
         # update last hit
         self._last_hit = perf_counter()
+        self._controller.feedback_heal_stop()
 
     def collide_wall(self, wall: Island):
         return wall.get_collided_sides(
@@ -295,10 +297,13 @@ class Player(LRImageEntity):
                 self._controller.feedback_shoot()
 
         # heal
-        if self._hp < self._max_hp:
-            if perf_counter() - self._last_hit > self._time_to_heal:
+        if perf_counter() - self._last_hit > self._time_to_heal:
+            if self._hp < self._max_hp:
                 self._hp += self._heal_per_second * delta
-                self._controller.feedback_heal()
+                self._controller.feedback_heal_start()
+            else:
+                self._controller.feedback_heal_stop()
+        
 
         # run update from parent classes
         super().update(delta)
