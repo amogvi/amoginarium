@@ -384,7 +384,8 @@ class BaseGame:
 
         in_menu: bool = True
         has_started: bool = False
-        self.load_map("assets/maps/tutorial.json")
+        # self.load_map("assets/maps/tutorial.json")
+        self.load_map("assets/maps/test.json")
 
         def start_game():
             nonlocal in_menu, has_started
