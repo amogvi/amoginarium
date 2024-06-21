@@ -24,7 +24,7 @@ from ._groups import Updated, GravityAffected, Drawn, FrictionXAffected
 from ..entities import SniperTurret, AkTurret, MinigunTurret, MortarTurret
 from ..entities import Player, Island, Bullet, BaseTurret, FlakTurret
 from ..entities import CRAMTurret, TextEntity
-from ..controllers import Controllers, Controller, GameController
+from ..controllers import Controllers, Controller, GameController, AmogistickController
 from ..debugging import run_with_debug, print_ic_style, CC
 from ._scrolling_background import ParalaxBackground
 from ._linked import global_vars, Coalitions
@@ -104,6 +104,7 @@ class BaseGame:
         self._pygame_loop_times: list[tuple[float, float]] = []
         self._comms_loop_times: list[tuple[float, float]] = []
         self._total_loop_times: list[tuple[float, float]] = []
+        self._amogistick_update_times: list[tuple[float, float]] = []
 
         # time since start, n_bullets, loop_time
         self._n_bullets_times: list[tuple[float, float, float]] = []
@@ -650,6 +651,23 @@ class BaseGame:
         self._n_bullets_times.append(
             (now - self._game_start, len(Bullets.sprites()), logic_time)
         )
+        # average the network update period for all amogistick controllers
+        amogistick_update_time = 0;
+        amogistick_count = 0
+        for p in Players.sprites():
+            p: Player
+            c = p._controller
+            if isinstance(c, AmogistickController):
+                amogistick_update_time += c.current_update_period
+                amogistick_count += 1
+        if amogistick_count > 0:
+            amogistick_update_time /= amogistick_count
+        self._amogistick_update_times.append(
+            (now - self._game_start, amogistick_update_time)
+        )
+                
+            
+
 
         return logic_time
 
@@ -703,7 +721,8 @@ class BaseGame:
                 "comms": self._comms_loop_times,
                 "bullets": self._n_bullets_times,
                 "pygame": self._pygame_loop_times,
-                "total": self._total_loop_times
+                "total": self._total_loop_times,
+                "amogistick": self._amogistick_update_times
             }, out)
 
         ic("done writing debug data")

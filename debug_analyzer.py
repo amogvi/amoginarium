@@ -34,6 +34,11 @@ for value in data["total"]:
     comms_xs.append(value[0])
     comms_ys.append(value[1] * 1000)
 
+amogistick_xs = []
+amogistick_ys = []
+for value in data["amogistick"]:
+    amogistick_xs.append(value[0])
+    amogistick_ys.append(value[1])
 
 bullets_xs = []
 n_bullets = []
@@ -89,6 +94,7 @@ ax2.grid()
 ax1.plot(pygame_xs, pygame_ys, label="pygame")
 ax1.plot(logic_xs, logic_ys, label="logic")
 # ax1.plot(comms_xs, comms_ys, label="total")
+ax1.plot(amogistick_xs, amogistick_ys, label="amogistick")
 
 ax1.set_xlabel("time since start in s")
 ax1.set_ylabel("loop time in ms")

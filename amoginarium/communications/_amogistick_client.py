@@ -12,7 +12,6 @@ import asyncio
 import collections
 import dataclasses
 from icecream import ic
-import queue
 import struct
 import time
 import enum
@@ -95,12 +94,13 @@ class AmogistickClient:
         self._in_timeout = False
         self._is_closed = False
 
+        self._measure_span = 10
+        self._times = collections.deque([time.perf_counter()] * self._measure_span, self._measure_span)
+
     async def run(self) -> None:
         """
         processes communication
         """
-        measure_span = 10
-        times = collections.deque([time.perf_counter()] * measure_span, measure_span)
 
         try:
             # first complete the identification procedure
@@ -167,10 +167,10 @@ class AmogistickClient:
                     case "u":
                         # read remaining bytes
                         msg = MsgUpdate.from_bytes(await self._reader.readexactly(msg_update_struct.size))
-                        times.appendleft(time.perf_counter())
-                        t10 = times[0] - times[-1]
-                        t = int((t10 / measure_span) * 1000)
-                        #ic(f"Update {t:03}ms: {msg}")
+                        self._times.appendleft(time.perf_counter())
+                        t10 = self._times[0] - self._times[-1]
+                        self._controller.current_update_period = int((t10 / self._measure_span) * 1000)
+                        #ic(f"Update {self._controller.current_update_period:03}ms: {msg}")
                         self._controller.update_controls(
                             msg.trigger_pressed,
                             msg.aux_l_pressed,

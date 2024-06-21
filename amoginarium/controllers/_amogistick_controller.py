@@ -19,6 +19,7 @@ class AmogistickController(Controller):
 
     def __init__(self, controller_id: str) -> None:
         super().__init__(controller_id)
+        self.current_update_period: int = 0
 
     def update(self, delta):
         """
