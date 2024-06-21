@@ -155,7 +155,6 @@ class ImageEntity(VisibleEntity):
         super().update(delta)
 
     def gl_draw(self) -> None:
-        glRotated(-self.velocity.angle * (180 / m.pi), 0, 0, 1)
         renderer.draw_textured_quad(
             self._texture_id,
             (
@@ -165,7 +164,8 @@ class ImageEntity(VisibleEntity):
             (
                 self.size.x,
                 self.size.y
-            )
+            ),
+            rotate_angle=self.velocity.angle * (180 / m.pi)
         )
 
 

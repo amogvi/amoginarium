@@ -45,6 +45,8 @@ class KeyboardController(Controller):
 
         self._keys.shoot = pressed_keys[pg.K_e]
         self._keys.reload = pressed_keys[pg.K_r]
+        self._keys.wpn_f = pressed_keys[pg.K_q]
+        self._keys.wpn_b = pressed_keys[pg.K_TAB]
 
         # set joystick position (using wasd keys)
         self._keys.joy_x = -left + right

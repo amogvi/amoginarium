@@ -200,7 +200,6 @@ class BaseGame:
 
         Island.load_textures()
         Player.load_textures()
-        Bullet.load_textures()
         BaseTurret.load_textures()
         explosion.load_textures(size=(512, 512))
 
@@ -383,8 +382,8 @@ class BaseGame:
 
         in_menu: bool = True
         has_started: bool = False
-        # self.load_map("assets/maps/tutorial.json")
-        self.load_map("assets/maps/test.json")
+        self.load_map("assets/maps/tutorial.json")
+        # self.load_map("assets/maps/test.json")
 
         def start_game():
             nonlocal in_menu, has_started
@@ -657,7 +656,7 @@ class BaseGame:
         """
         start communications
         """
-        asyncio.run(self._server.run())
+        # asyncio.run(self._server.run())
         ic("comms end")
 
         # TODO: controller latency in graph
@@ -688,7 +687,7 @@ class BaseGame:
 
         # tell server to shutdown
         #with suppress(RuntimeError):
-        self._server.close()
+        # self._server.close()
 
         ic("stopping game...")
 

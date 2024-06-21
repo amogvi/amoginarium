@@ -11,7 +11,7 @@ from OpenGL.GL import glTranslate, glMatrixMode, glLoadIdentity, glTexCoord2f
 from OpenGL.GL import glBindTexture, glTexParameteri, glTexImage2D, glEnable
 from OpenGL.GL import glGenTextures, glVertex2f, glColor3f, glColor4f, glEnd
 from OpenGL.GL import glDisable, glBegin, glVertex, glFlush, glClearColor
-from OpenGL.GL import glBlendFunc, glWindowPos2d, glDrawPixels
+from OpenGL.GL import glBlendFunc, glWindowPos2d, glDrawPixels, glRotated
 from OpenGL.GL import GL_UNSIGNED_BYTE, GL_MODELVIEW, GL_ONE_MINUS_SRC_ALPHA
 from OpenGL.GL import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT, GL_LINES
 from OpenGL.GL import GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_POLYGON
@@ -195,7 +195,8 @@ class OpenGLRenderer(BaseRenderer):
             texture_id: TextureID,
             pos,
             size,
-            convert_global=True
+            convert_global=True,
+            rotate_angle=0
     ):
         pos = convert_coord(pos, Vec2)
         size = convert_coord(size, Vec2)
@@ -218,6 +219,10 @@ class OpenGLRenderer(BaseRenderer):
 
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, texture_id)
+
+        # rotate
+        glRotated(rotate_angle, 0, 0, 1)
+
         glBegin(GL_QUADS)
 
         # draw rectangle and texture

@@ -16,7 +16,7 @@ from ..base import GravityAffected, FrictionXAffected, HasBars
 from ..base import CollisionDestroyed, WallCollider, Players
 from ..base import Updated, Drawn
 from ._base_entity import LRImageEntity
-from ._weapons import Minigun as Weapon
+from ._weapons import Ak47, Minigun, Sniper, Mortar, Flak, BaseWeapon
 from ..render_bindings import renderer
 from ..base._textures import textures
 from ..controllers import Controller
@@ -142,8 +142,18 @@ class Player(LRImageEntity):
             HasBars
         )
 
-        self.weapon = Weapon(self, False)
-        self.weapon.reload(True)
+        self._last_wpn_change = 0
+        self._current_weapon = 0
+        self._weapons = [
+            Ak47(self, False),
+            Minigun(self, False),
+            Sniper(self, False),
+            Mortar(self, False),
+            Flak(self, False),
+        ]
+
+        for i in range(len(self._weapons)):
+            self._weapons[i].reload(True)
 
         self._n_hits = 0
 
@@ -174,6 +184,26 @@ class Player(LRImageEntity):
         checks if the player is alive
         """
         return self._alive
+
+    @property
+    def weapon(self) -> BaseWeapon:
+        return self._weapons[self._current_weapon]
+
+    def next_weapon(self) -> None:
+        """
+        switches to the next weapon
+        """
+        self._current_weapon += 1
+        if self._current_weapon >= len(self._weapons):
+            self._current_weapon = 0
+
+    def previous_weapon(self) -> None:
+        """
+        switches to the previous weapon
+        """
+        self._current_weapon -= 1
+        if self._current_weapon < 0:
+            self._current_weapon = len(self._weapons)-1
 
     def hit(self, damage: float, hit_by: tp.Self = ...) -> None:
         """
@@ -219,7 +249,9 @@ class Player(LRImageEntity):
 
     def update(self, delta):
         # update reloads
-        self.weapon.update(delta)
+        # self.weapon.update(delta)
+        for i in range(len(self._weapons)):
+            self._weapons[i].update(delta)
 
         # stay on ground if touching ground
         in_wall = WallCollider.collides_with(self)
@@ -296,6 +328,15 @@ class Player(LRImageEntity):
         if self._controller.reload:
             self.weapon.reload()
 
+        # switch weapon
+        if self._controller.wpn_f and perf_counter() - self._last_wpn_change > .1:
+            self._last_wpn_change = perf_counter()
+            self.next_weapon()
+
+        if self._controller.wpn_b and perf_counter() - self._last_wpn_change > .1:
+            self._last_wpn_change = perf_counter()
+            self.previous_weapon()
+
         # directional stuff
         # shoot
         if self._controller.shoot:
@@ -348,7 +389,6 @@ class Player(LRImageEntity):
                     (0, self.world_position.y),
                     (64, 64)
                 )
-            return
 
         # right of screen
         elif self.world_position.x > 1920:
@@ -366,9 +406,10 @@ class Player(LRImageEntity):
                     (1920 - 64, self.world_position.y),
                     (64, 64)
                 )
-            return
 
-        super().gl_draw()
+        else:
+            super().gl_draw()
+            self.weapon.draw_at(self.position, -20)
 
     def kill(self, killed_by=...) -> None:
         """

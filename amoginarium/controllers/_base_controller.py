@@ -15,11 +15,12 @@ from ..logic import Vec2
 
 
 @dataclass
-class controls():
+class controls:
     jump: bool = False
     reload: bool = False
     shoot: bool = False
-    idk: bool = False
+    wpn_f: bool = False
+    wpn_b: bool = False
     joy_btn: bool = False
     joy_x: float = 0
     joy_y: float = 0
@@ -153,6 +154,14 @@ class Controller:
     @property
     def shoot(self) -> bool:
         return self._keys.shoot
+
+    @property
+    def wpn_f(self) -> bool:
+        return self._keys.wpn_f
+
+    @property
+    def wpn_b(self) -> bool:
+        return self._keys.wpn_b
 
     @property
     def joy_btn(self) -> bool:
