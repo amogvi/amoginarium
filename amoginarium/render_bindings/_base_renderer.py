@@ -48,7 +48,8 @@ class BaseRenderer:
             texture_id: TextureID,
             pos: coord_t,
             size: coord_t,
-            convert_global: bool = True
+            convert_global: bool = True,
+            rotate_angle: float = 0
     ) -> None:
         """
         draw a rectangle with a texture

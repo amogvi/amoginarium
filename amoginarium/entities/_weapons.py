@@ -30,20 +30,12 @@ BULLET_PATH = "bullet"
 
 
 class Bullet(ImageEntity):
-    _image_path: str = BULLET_PATH
-    _bullet_texture: int = ...
+    _bullet_image: str = (BULLET_PATH, "x")
+    _casing_image: str = (BULLET_PATH, "")
     _base_damage: float = 1
 
     def __new__(cls, *args, **kwargs) -> "Bullet":
-        # only load texture once
-        if cls._bullet_texture is ...:
-            cls.load_textures()
-
         return super(Bullet, cls).__new__(cls)
-
-    @classmethod
-    def load_textures(cls) -> None:
-        cls._bullet_texture, _ = textures.get_texture(BULLET_PATH, (10, 10))
 
     def __init__(
         self,
@@ -69,9 +61,12 @@ class Bullet(ImageEntity):
         self._explosion_damage = explosion_damage
         self._target_pos = target_pos
 
-        texture_id = self._bullet_texture
-
         self._start_time = perf_counter()
+
+        # load textures
+        self._bullet_texture, _ = textures.get_texture(BULLET_PATH, size.xy, "x")
+        self._casing_texture, _ = textures.get_texture(BULLET_PATH, size.xy, "x")
+        texture_id = self._bullet_texture
 
         super().__init__(
             texture_id=texture_id,
@@ -196,32 +191,41 @@ class Bullet(ImageEntity):
 
     def gl_draw(self) -> None:
         if not self._casing:
-            renderer.draw_circle(
-                self.world_position,
-                self.size.x * .5,
-                8,
-                Color.from_255(255, 255, 60)
-            )
-
-            if global_vars.show_targets and self._target_pos is not ...:
-                renderer.draw_line(
-                    self.world_position,
-                    self._target_pos - Updated.world_position,
-                    Color.from_255(255, 100, 0, 220)
-                )
+            if self._bullet_texture is ...:
                 renderer.draw_circle(
-                    self._target_pos - Updated.world_position,
+                    self.world_position,
                     self.size.x * .5,
-                    32,
-                    Color.from_255(255, 100, 0, 220)
+                    8,
+                    Color.from_255(255, 255, 60)
                 )
 
-            return
+                if global_vars.show_targets and self._target_pos is not ...:
+                    renderer.draw_line(
+                        self.world_position,
+                        self._target_pos - Updated.world_position,
+                        Color.from_255(255, 100, 0, 220)
+                    )
+                    renderer.draw_circle(
+                        self._target_pos - Updated.world_position,
+                        self.size.x * .5,
+                        32,
+                        Color.from_255(255, 100, 0, 220)
+                    )
+
+                return
+
+            # draw image if given
+            self._texture_id = self._bullet_texture
+
+        else:
+            self._texture_id = self._casing_texture
 
         return super().gl_draw()
 
 
 class BaseWeapon:
+    _image: str = ("bullet", (64, 64), "x")
+    _image_offset: Vec2 = Vec2.from_cartesian(0, 15)
     _current_recoil_time: float = 0
     _current_sound_time: float = 0
     _current_reload_time: float = 0
@@ -252,7 +256,7 @@ class BaseWeapon:
         self.parent = parent
         self._coalition = parent.coalition
         self._mag_size = mag_size
-        self._inacuracy = inaccuracy
+        self._inaccuracy = inaccuracy
         self._reload_time = reload_time
         self._recoil_time = recoil_time
         self._reload_time = reload_time
@@ -266,6 +270,8 @@ class BaseWeapon:
         self._bullet_lifetime = bullet_lifetime
         self._sound_effect = sound_effect
         self.__sound_effect: sound_effect = ...
+        self._texture_id, _ = textures.get_texture(*self._image)  # renderer.load_texture(*self._image)
+        self._size = Vec2.from_cartesian(*self._image[1])
 
     @property
     def mag_size(self) -> int:
@@ -377,7 +383,7 @@ class BaseWeapon:
 
         # inacuracy
         offset = randint(-255, 255) / 255
-        offset *= self._inacuracy
+        offset *= self._inaccuracy
         direction.angle += offset
 
         # recoil
@@ -445,8 +451,23 @@ class BaseWeapon:
         if self.__sound_effect is not ...:
             self.__sound_effect.stop()
 
+    def draw_at(self, position: Vec2, angle: float) -> None:
+        """
+        draw the weapon (centered) at a specified position
+        """
+        position += self._image_offset
+        renderer.draw_textured_quad(
+            self._texture_id,
+            (position - Updated.world_position - (self._size / 2)).xy,
+            self._size.xy,
+            rotate_angle=angle
+        )
+
 
 class Minigun(BaseWeapon):
+    _image: str = ("minigun", (128, 64), "x")
+    _image_offset: Vec2 = Vec2.from_cartesian(0, 30)
+
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
@@ -463,6 +484,9 @@ class Minigun(BaseWeapon):
 
 
 class Ak47(BaseWeapon):
+    _image: str = ("ak47", (80, 40), "x")
+    _image_offset: Vec2 = Vec2.from_cartesian(0, 20)
+
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
@@ -479,6 +503,9 @@ class Ak47(BaseWeapon):
 
 
 class Sniper(BaseWeapon):
+    _image: str = ("sniper", (120, 60), "x")
+    _image_offset: Vec2 = Vec2.from_cartesian(0, 25)
+
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
@@ -496,6 +523,8 @@ class Sniper(BaseWeapon):
 
 
 class Mortar(BaseWeapon):
+    _bullet_image = BULLET_PATH
+
     def __init__(self, parent, drop_casings: bool = False) -> None:
         super().__init__(
             parent,
